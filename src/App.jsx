@@ -14,104 +14,82 @@ import {
 } from "firebase/firestore";
 
 // ─── Constants ───
-const JOB_TYPES = [
-  "Attic Removal",
-  "Attic Recap",
-  "New Construction",
-  "Retrofit Wall Injection",
-  "Crawl Space",
-  "Commercial",
-  "Spray Foam",
-  "Batt Insulation",
-];
-
+const JOB_TYPES = ["Attic Removal","Attic Recap","New Construction","Retrofit Wall Injection","Crawl Space","Commercial","Spray Foam","Batt Insulation"];
 const STATUS_OPTIONS = [
-  { value: "not_started", label: "Not Started", color: "#64748b", bg: "#f1f5f9" },
-  { value: "en_route", label: "En Route", color: "#2563eb", bg: "#dbeafe" },
-  { value: "in_progress", label: "In Progress", color: "#d97706", bg: "#fef3c7" },
-  { value: "wrapping_up", label: "Wrapping Up", color: "#7c3aed", bg: "#ede9fe" },
-  { value: "completed", label: "Completed", color: "#16a34a", bg: "#dcfce7" },
-  { value: "issue", label: "Issue / Need Help", color: "#dc2626", bg: "#fee2e2" },
+  { value: "not_started", label: "Not Started", color: "#6b7280", bg: "#f3f4f6" },
+  { value: "en_route", label: "En Route", color: "#1d4ed8", bg: "#dbeafe" },
+  { value: "in_progress", label: "In Progress", color: "#b45309", bg: "#fef3c7" },
+  { value: "wrapping_up", label: "Wrapping Up", color: "#6d28d9", bg: "#ede9fe" },
+  { value: "completed", label: "Completed", color: "#15803d", bg: "#dcfce7" },
+  { value: "issue", label: "Issue / Need Help", color: "#b91c1c", bg: "#fee2e2" },
 ];
-
 const TICKET_PRIORITIES = [
-  { value: "low", label: "Low — Can Wait", color: "#3b82f6", bg: "#dbeafe" },
-  { value: "medium", label: "Medium — Needs Attention", color: "#f59e0b", bg: "#fef3c7" },
-  { value: "high", label: "High — Affecting Work", color: "#ef4444", bg: "#fee2e2" },
-  { value: "critical", label: "Critical — Truck Down", color: "#dc2626", bg: "#fecaca" },
+  { value: "low", label: "Low — Can Wait", color: "#1d4ed8", bg: "#dbeafe" },
+  { value: "medium", label: "Medium — Needs Attention", color: "#b45309", bg: "#fef3c7" },
+  { value: "high", label: "High — Affecting Work", color: "#b91c1c", bg: "#fee2e2" },
+  { value: "critical", label: "Critical — Truck Down", color: "#991b1b", bg: "#fecaca" },
 ];
-
 const TICKET_STATUSES = [
-  { value: "open", label: "Open", color: "#ef4444", bg: "#fee2e2" },
-  { value: "acknowledged", label: "Acknowledged", color: "#f59e0b", bg: "#fef3c7" },
-  { value: "in_repair", label: "In Repair", color: "#7c3aed", bg: "#ede9fe" },
-  { value: "resolved", label: "Resolved", color: "#16a34a", bg: "#dcfce7" },
+  { value: "open", label: "Open", color: "#b91c1c", bg: "#fee2e2" },
+  { value: "acknowledged", label: "Acknowledged", color: "#b45309", bg: "#fef3c7" },
+  { value: "in_repair", label: "In Repair", color: "#6d28d9", bg: "#ede9fe" },
+  { value: "resolved", label: "Resolved", color: "#15803d", bg: "#dcfce7" },
 ];
+const OFFICE_PROFILES = ["Johnny", "Jordan", "Skip", "Duck"];
 
 const todayStr = () => new Date().toISOString().split("T")[0];
+const timeStr = () => new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+const dateStr = (iso) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch { return ""; } };
 
-const OFFICE_PROFILES = [
-  { name: "Johnny", emoji: "👔" },
-  { name: "Jordan", emoji: "📋" },
-  { name: "Skip", emoji: "🔧" },
-  { name: "Duck", emoji: "🦆" },
-];
-const timeStr = () =>
-  new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-const dateStr = (iso) => {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  } catch { return ""; }
-};
-
-const theme = {
-  bg: "#0f1419",
-  surface: "#1a2029",
-  surfaceHover: "#222d3a",
-  card: "#1e2a36",
-  border: "#2a3a4a",
-  accent: "#f59e0b",
-  text: "#e2e8f0",
-  textMuted: "#94a3b8",
-  textDim: "#64748b",
-  danger: "#ef4444",
-  success: "#22c55e",
+// ─── Theme ───
+const t = {
+  bg: "#f8f9fb",
+  surface: "#ffffff",
+  card: "#ffffff",
+  border: "#e2e5ea",
+  borderLight: "#eef0f3",
+  accent: "#1a56db",
+  accentHover: "#1648b8",
+  accentBg: "#eef2ff",
+  text: "#111827",
+  textSecondary: "#4b5563",
+  textMuted: "#9ca3af",
+  danger: "#dc2626",
+  dangerBg: "#fef2f2",
+  shadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
+  shadowMd: "0 4px 12px rgba(0,0,0,0.08)",
 };
 
 // ─── Reusable Components ───
 function Badge({ children, color, bg }) {
-  return (
-    <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: "4px", fontSize: "11px", fontWeight: 600, letterSpacing: "0.5px", textTransform: "uppercase", color: color || theme.accent, background: bg || "rgba(245,158,11,0.15)" }}>
-      {children}
-    </span>
-  );
+  return <span style={{ display: "inline-block", padding: "2px 8px", borderRadius: "4px", fontSize: "10.5px", fontWeight: 600, letterSpacing: "0.4px", textTransform: "uppercase", color: color || t.accent, background: bg || t.accentBg, whiteSpace: "nowrap" }}>{children}</span>;
 }
 
 function Button({ children, onClick, variant = "primary", style: s, disabled }) {
-  const base = { padding: "10px 20px", border: "none", borderRadius: "6px", fontWeight: 600, fontSize: "14px", cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.15s ease", opacity: disabled ? 0.5 : 1, letterSpacing: "0.3px", fontFamily: "inherit" };
-  const variants = {
-    primary: { background: theme.accent, color: "#000" },
-    secondary: { background: theme.surfaceHover, color: theme.text, border: "1px solid " + theme.border },
-    danger: { background: "rgba(239,68,68,0.15)", color: theme.danger, border: "1px solid rgba(239,68,68,0.3)" },
-    ghost: { background: "transparent", color: theme.textMuted, padding: "8px 12px" },
+  const base = { padding: "9px 18px", border: "none", borderRadius: "6px", fontWeight: 500, fontSize: "13.5px", cursor: disabled ? "not-allowed" : "pointer", transition: "all 0.15s ease", opacity: disabled ? 0.45 : 1, fontFamily: "inherit" };
+  const v = {
+    primary: { background: t.accent, color: "#fff" },
+    secondary: { background: t.bg, color: t.textSecondary, border: "1px solid " + t.border },
+    danger: { background: t.dangerBg, color: t.danger, border: "1px solid #fecaca" },
+    ghost: { background: "transparent", color: t.textMuted, padding: "6px 10px" },
   };
-  return <button onClick={onClick} disabled={disabled} style={{ ...base, ...variants[variant], ...s }}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} style={{ ...base, ...v[variant], ...s }}>{children}</button>;
 }
 
 function Input({ label, ...props }) {
   return (
-    <div style={{ marginBottom: "14px" }}>
-      {label && <label style={{ display: "block", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", color: theme.textMuted, marginBottom: "6px" }}>{label}</label>}
-      <input {...props} style={{ width: "100%", padding: "10px 14px", background: theme.bg, border: "1px solid " + theme.border, borderRadius: "6px", color: theme.text, fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", ...(props.style || {}) }} />
+    <div style={{ marginBottom: "16px" }}>
+      {label && <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>{label}</label>}
+      <input {...props} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", ...(props.style || {}) }} onFocus={(e) => e.target.style.borderColor = t.accent} onBlur={(e) => e.target.style.borderColor = t.border} />
     </div>
   );
 }
 
 function Select({ label, options, ...props }) {
   return (
-    <div style={{ marginBottom: "14px" }}>
-      {label && <label style={{ display: "block", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", color: theme.textMuted, marginBottom: "6px" }}>{label}</label>}
-      <select {...props} style={{ width: "100%", padding: "10px 14px", background: theme.bg, border: "1px solid " + theme.border, borderRadius: "6px", color: theme.text, fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", ...(props.style || {}) }}>
+    <div style={{ marginBottom: "16px" }}>
+      {label && <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>{label}</label>}
+      <select {...props} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", outline: "none", boxSizing: "border-box", ...(props.style || {}) }}>
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
     </div>
@@ -120,18 +98,18 @@ function Select({ label, options, ...props }) {
 
 function TextArea({ label, ...props }) {
   return (
-    <div style={{ marginBottom: "14px" }}>
-      {label && <label style={{ display: "block", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", color: theme.textMuted, marginBottom: "6px" }}>{label}</label>}
-      <textarea {...props} style={{ width: "100%", padding: "10px 14px", background: theme.bg, border: "1px solid " + theme.border, borderRadius: "6px", color: theme.text, fontSize: "14px", fontFamily: "inherit", outline: "none", resize: "vertical", minHeight: "80px", boxSizing: "border-box", ...(props.style || {}) }} />
+    <div style={{ marginBottom: "16px" }}>
+      {label && <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>{label}</label>}
+      <textarea {...props} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", outline: "none", resize: "vertical", minHeight: "80px", boxSizing: "border-box", ...(props.style || {}) }} onFocus={(e) => e.target.style.borderColor = t.accent} onBlur={(e) => e.target.style.borderColor = t.border} />
     </div>
   );
 }
 
 function Card({ children, style: s, onClick }) {
   return (
-    <div onClick={onClick} style={{ background: theme.card, border: "1px solid " + theme.border, borderRadius: "8px", padding: "18px", marginBottom: "12px", cursor: onClick ? "pointer" : "default", transition: "border-color 0.15s ease", ...s }}
-      onMouseEnter={(e) => onClick && (e.currentTarget.style.borderColor = theme.accent)}
-      onMouseLeave={(e) => onClick && (e.currentTarget.style.borderColor = theme.border)}>
+    <div onClick={onClick} style={{ background: t.card, border: "1px solid " + t.border, borderRadius: "8px", padding: "16px", marginBottom: "10px", cursor: onClick ? "pointer" : "default", transition: "all 0.15s ease", boxShadow: t.shadow, ...s }}
+      onMouseEnter={(e) => { if (onClick) { e.currentTarget.style.borderColor = t.accent; e.currentTarget.style.boxShadow = t.shadowMd; } }}
+      onMouseLeave={(e) => { if (onClick) { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.boxShadow = t.shadow; } }}>
       {children}
     </div>
   );
@@ -139,11 +117,11 @@ function Card({ children, style: s, onClick }) {
 
 function Modal({ title, onClose, children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }} onClick={onClose}>
-      <div style={{ background: theme.surface, border: "1px solid " + theme.border, borderRadius: "12px", padding: "28px", maxWidth: "500px", width: "100%", maxHeight: "85vh", overflowY: "auto" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "22px", fontWeight: 600, color: theme.text, margin: 0 }}>{title}</h2>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "24px", cursor: "pointer" }}>✕</button>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "20px" }} onClick={onClose}>
+      <div style={{ background: "#fff", border: "1px solid " + t.border, borderRadius: "12px", padding: "28px", maxWidth: "480px", width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "22px", paddingBottom: "14px", borderBottom: "1px solid " + t.borderLight }}>
+          <h2 style={{ fontSize: "17px", fontWeight: 600, color: t.text, margin: 0 }}>{title}</h2>
+          <button onClick={onClose} style={{ background: t.bg, border: "1px solid " + t.border, color: t.textMuted, width: "28px", height: "28px", borderRadius: "6px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px" }}>✕</button>
         </div>
         {children}
       </div>
@@ -151,45 +129,67 @@ function Modal({ title, onClose, children }) {
   );
 }
 
-// ─── Role Selection ───
+function SectionHeader({ title, right }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "10px" }}>
+      <h2 style={{ fontSize: "18px", fontWeight: 600, color: t.text, margin: 0 }}>{title}</h2>
+      {right && <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>{right}</div>}
+    </div>
+  );
+}
+
+function EmptyState({ text, sub }) {
+  return (
+    <Card style={{ textAlign: "center", padding: "52px 24px", borderStyle: "dashed" }}>
+      <div style={{ color: t.textSecondary, fontSize: "14px" }}>{text}</div>
+      {sub && <div style={{ color: t.textMuted, fontSize: "13px", marginTop: "4px" }}>{sub}</div>}
+    </Card>
+  );
+}
+
+// ─── Screens ───
+
 function RoleSelect({ onSelect }) {
   return (
-    <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
-      <div style={{ textAlign: "center", marginBottom: "48px" }}>
-        <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "42px", fontWeight: 700, color: theme.accent, letterSpacing: "3px" }}>IST</div>
-        <div style={{ fontSize: "13px", color: theme.textMuted, letterSpacing: "3px", textTransform: "uppercase", marginTop: "6px" }}>Insulation Services of Tulsa</div>
-        <div style={{ width: "60px", height: "3px", background: theme.accent, margin: "18px auto 0", borderRadius: "2px" }} />
+    <div style={{ minHeight: "100vh", background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+      <div style={{ textAlign: "center", marginBottom: "40px" }}>
+        <div style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "2px", textTransform: "uppercase", color: t.accent }}>Insulation Services of Tulsa</div>
+        <div style={{ fontSize: "32px", fontWeight: 700, color: t.text, marginTop: "6px" }}>IST Dispatch</div>
+        <div style={{ width: "40px", height: "2px", background: t.accent, margin: "14px auto 0", borderRadius: "1px" }} />
       </div>
-      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", justifyContent: "center", maxWidth: "500px" }}>
-        <Card onClick={() => onSelect("admin")} style={{ flex: "1 1 200px", textAlign: "center", padding: "32px 24px", cursor: "pointer" }}>
-          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📋</div>
-          <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "20px", fontWeight: 600, color: theme.text }}>OFFICE</div>
-          <div style={{ fontSize: "13px", color: theme.textMuted, marginTop: "6px" }}>Schedule jobs & manage crews</div>
+      <div style={{ display: "flex", gap: "14px", flexWrap: "wrap", justifyContent: "center", maxWidth: "460px", width: "100%" }}>
+        <Card onClick={() => onSelect("admin")} style={{ flex: "1 1 200px", textAlign: "center", padding: "32px 20px", cursor: "pointer" }}>
+          <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: t.accentBg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+            <svg width="20" height="20" fill="none" stroke={t.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          </div>
+          <div style={{ fontSize: "16px", fontWeight: 600, color: t.text }}>Office</div>
+          <div style={{ fontSize: "13px", color: t.textMuted, marginTop: "4px" }}>Schedule jobs & manage crews</div>
         </Card>
-        <Card onClick={() => onSelect("crew")} style={{ flex: "1 1 200px", textAlign: "center", padding: "32px 24px", cursor: "pointer" }}>
-          <div style={{ fontSize: "36px", marginBottom: "12px" }}>🚛</div>
-          <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "20px", fontWeight: 600, color: theme.text }}>FIELD CREW</div>
-          <div style={{ fontSize: "13px", color: theme.textMuted, marginTop: "6px" }}>View jobs & send updates</div>
+        <Card onClick={() => onSelect("crew")} style={{ flex: "1 1 200px", textAlign: "center", padding: "32px 20px", cursor: "pointer" }}>
+          <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: t.accentBg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+            <svg width="20" height="20" fill="none" stroke={t.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8zM5.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>
+          </div>
+          <div style={{ fontSize: "16px", fontWeight: 600, color: t.text }}>Field Crew</div>
+          <div style={{ fontSize: "13px", color: t.textMuted, marginTop: "4px" }}>View jobs & send updates</div>
         </Card>
       </div>
     </div>
   );
 }
 
-// ─── Admin Login ───
 function AdminLogin({ onLogin, onBack }) {
   return (
-    <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
-      <div style={{ maxWidth: "400px", width: "100%" }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "14px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
-        <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "28px", fontWeight: 700, color: theme.text, margin: "0 0 8px" }}>OFFICE LOGIN</h1>
-        <p style={{ color: theme.textMuted, fontSize: "14px", margin: "0 0 28px" }}>Who's logging in?</p>
+    <div style={{ minHeight: "100vh", background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+      <div style={{ maxWidth: "380px", width: "100%" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: t.textMuted, fontSize: "13px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
+        <h1 style={{ fontSize: "22px", fontWeight: 600, color: t.text, margin: "0 0 6px" }}>Office Login</h1>
+        <p style={{ color: t.textMuted, fontSize: "13.5px", margin: "0 0 24px" }}>Select your profile</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {OFFICE_PROFILES.map((p) => (
-            <Card key={p.name} onClick={() => onLogin(p.name)} style={{ padding: "16px 18px", cursor: "pointer" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                <span style={{ fontSize: "28px" }}>{p.emoji}</span>
-                <div style={{ fontWeight: 600, color: theme.text, fontSize: "17px", fontFamily: "'Oswald', sans-serif", letterSpacing: "0.5px" }}>{p.name}</div>
+          {OFFICE_PROFILES.map((name) => (
+            <Card key={name} onClick={() => onLogin(name)} style={{ padding: "14px 18px", cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: t.accentBg, color: t.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: 700 }}>{name[0]}</div>
+                <div style={{ fontWeight: 500, color: t.text, fontSize: "15px" }}>{name}</div>
               </div>
             </Card>
           ))}
@@ -199,30 +199,31 @@ function AdminLogin({ onLogin, onBack }) {
   );
 }
 
-// ─── Crew Login ───
 function CrewLogin({ trucks, onLogin, onBack }) {
   const [selected, setSelected] = useState("");
   const [crewName, setCrewName] = useState("");
   return (
-    <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
-      <div style={{ maxWidth: "400px", width: "100%" }}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "14px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
-        <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "28px", fontWeight: 700, color: theme.text, margin: "0 0 8px" }}>CREW LOGIN</h1>
-        <p style={{ color: theme.textMuted, fontSize: "14px", margin: "0 0 28px" }}>Select your truck and enter your name.</p>
-        <Input label="Your Name" placeholder="e.g. Mike, Carlos..." value={crewName} onChange={(e) => setCrewName(e.target.value)} />
+    <div style={{ minHeight: "100vh", background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+      <div style={{ maxWidth: "380px", width: "100%" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: t.textMuted, fontSize: "13px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
+        <h1 style={{ fontSize: "22px", fontWeight: 600, color: t.text, margin: "0 0 6px" }}>Crew Login</h1>
+        <p style={{ color: t.textMuted, fontSize: "13.5px", margin: "0 0 24px" }}>Select your truck and enter your name</p>
+        <Input label="Your Name" placeholder="Enter your name" value={crewName} onChange={(e) => setCrewName(e.target.value)} />
         {trucks.length === 0 ? (
-          <Card style={{ textAlign: "center", padding: "32px" }}><div style={{ color: theme.textMuted, fontSize: "14px" }}>No trucks set up yet. Ask the office to add trucks.</div></Card>
+          <EmptyState text="No trucks set up yet." sub="Ask the office to add trucks." />
         ) : (
           <>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", color: theme.textMuted, marginBottom: "10px" }}>Select Your Truck</label>
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "24px" }}>
-              {trucks.map((t) => (
-                <Card key={t.id} onClick={() => setSelected(t.id)} style={{ padding: "14px 18px", cursor: "pointer", borderColor: selected === t.id ? theme.accent : theme.border, background: selected === t.id ? "rgba(245,158,11,0.08)" : theme.card }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <span style={{ fontSize: "22px" }}>🚛</span>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "8px" }}>Select Your Truck</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "20px" }}>
+              {trucks.map((tr) => (
+                <Card key={tr.id} onClick={() => setSelected(tr.id)} style={{ padding: "12px 16px", cursor: "pointer", borderColor: selected === tr.id ? t.accent : t.border, background: selected === tr.id ? t.accentBg : "#fff" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: "32px", height: "32px", borderRadius: "6px", background: selected === tr.id ? t.accent : t.bg, color: selected === tr.id ? "#fff" : t.textMuted, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8zM5.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>
+                    </div>
                     <div>
-                      <div style={{ fontWeight: 600, color: theme.text, fontSize: "15px" }}>{t.name}</div>
-                      {t.members && <div style={{ fontSize: "12px", color: theme.textMuted }}>{t.members}</div>}
+                      <div style={{ fontWeight: 500, color: t.text, fontSize: "14px" }}>{tr.name}</div>
+                      {tr.members && <div style={{ fontSize: "12px", color: t.textMuted }}>{tr.members}</div>}
                     </div>
                   </div>
                 </Card>
@@ -230,7 +231,7 @@ function CrewLogin({ trucks, onLogin, onBack }) {
             </div>
           </>
         )}
-        <Button onClick={() => onLogin(selected, crewName)} disabled={!selected || !crewName.trim()} style={{ width: "100%" }}>LOG IN →</Button>
+        <Button onClick={() => onLogin(selected, crewName)} disabled={!selected || !crewName.trim()} style={{ width: "100%" }}>Log In</Button>
       </div>
     </div>
   );
@@ -240,7 +241,7 @@ function CrewLogin({ trucks, onLogin, onBack }) {
 function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate, onSubmitTicket, onLogout }) {
   const today = todayStr();
   const myJobs = jobs.filter((j) => j.truckId === truck.id && j.date === today);
-  const myTickets = tickets.filter((t) => t.truckId === truck.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const myTickets = tickets.filter((tk) => tk.truckId === truck.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   const [crewView, setCrewView] = useState("jobs");
   const [activeJob, setActiveJob] = useState(null);
   const [status, setStatus] = useState("in_progress");
@@ -262,24 +263,24 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
     setTicketDesc(""); setTicketPriority("medium"); setShowTicketForm(false);
   };
 
-  const crewTabStyle = (active) => ({ padding: "10px 18px", background: active ? theme.accent : "transparent", color: active ? "#000" : theme.textMuted, border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: "pointer", letterSpacing: "0.5px", textTransform: "uppercase", fontFamily: "inherit", position: "relative" });
-  const openTicketCount = myTickets.filter((t) => t.status !== "resolved").length;
+  const tabStyle = (active) => ({ padding: "8px 16px", background: active ? t.accent : "transparent", color: active ? "#fff" : t.textMuted, border: active ? "none" : "1px solid " + t.border, borderRadius: "6px", fontSize: "12.5px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", position: "relative" });
+  const openTicketCount = myTickets.filter((tk) => tk.status !== "resolved").length;
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.bg }}>
-      <div style={{ background: theme.surface, borderBottom: "1px solid " + theme.border, padding: "14px 20px", position: "sticky", top: 0, zIndex: 100 }}>
+    <div style={{ minHeight: "100vh", background: t.bg }}>
+      <div style={{ background: t.surface, borderBottom: "1px solid " + t.border, padding: "12px 20px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "18px", fontWeight: 600, color: theme.accent }}>IST</div>
-            <div style={{ fontSize: "12px", color: theme.textMuted }}>🚛 {truck.name} · {crewName}</div>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: t.text }}>IST Dispatch</div>
+            <div style={{ fontSize: "12px", color: t.textMuted }}>{truck.name} — {crewName}</div>
           </div>
-          <Button variant="ghost" onClick={onLogout} style={{ fontSize: "12px" }}>LOG OUT</Button>
+          <Button variant="ghost" onClick={onLogout} style={{ fontSize: "12px" }}>Log Out</Button>
         </div>
-        <div style={{ display: "flex", gap: "6px", marginTop: "12px" }}>
-          <button style={crewTabStyle(crewView === "jobs")} onClick={() => setCrewView("jobs")}>Jobs</button>
-          <button style={crewTabStyle(crewView === "tickets")} onClick={() => setCrewView("tickets")}>
+        <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
+          <button style={tabStyle(crewView === "jobs")} onClick={() => setCrewView("jobs")}>Jobs</button>
+          <button style={tabStyle(crewView === "tickets")} onClick={() => setCrewView("tickets")}>
             Truck Issues
-            {openTicketCount > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", background: theme.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
+            {openTicketCount > 0 && <span style={{ position: "absolute", top: "-5px", right: "-5px", background: t.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "17px", height: "17px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
           </button>
         </div>
       </div>
@@ -287,50 +288,40 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
       <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
         {crewView === "jobs" && (
           <>
-            <div style={{ marginBottom: "20px" }}>
-              <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "24px", fontWeight: 600, color: theme.text, margin: "0 0 4px" }}>TODAY'S JOBS</h2>
-              <p style={{ color: theme.textMuted, fontSize: "13px", margin: 0 }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</p>
-            </div>
-            {myJobs.length === 0 ? (
-              <Card style={{ textAlign: "center", padding: "48px 24px" }}>
-                <div style={{ fontSize: "36px", marginBottom: "12px" }}>📭</div>
-                <div style={{ color: theme.textMuted, fontSize: "15px" }}>No jobs scheduled for today.</div>
-              </Card>
-            ) : myJobs.map((job) => {
+            <SectionHeader title="Today's Jobs" right={<span style={{ fontSize: "13px", color: t.textMuted }}>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>} />
+            {myJobs.length === 0 ? <EmptyState text="No jobs scheduled for today." sub="Check back or contact the office." /> : myJobs.map((job) => {
               const latestStatus = getLatestStatus(job.id);
               const statusObj = STATUS_OPTIONS.find((s) => s.value === latestStatus);
               const jobUpdates = getJobUpdates(job.id);
               return (
-                <Card key={job.id} style={{ padding: 0, overflow: "hidden" }}>
-                  <div style={{ padding: "18px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
-                      <div>
-                        <div style={{ fontWeight: 700, color: theme.text, fontSize: "16px", marginBottom: "4px" }}>{job.address}</div>
-                        <div style={{ fontSize: "13px", color: theme.textMuted }}>{job.builder && (job.builder + " · ")}{job.type}</div>
-                      </div>
-                      <Badge color={statusObj.color} bg={statusObj.bg}>{statusObj.label}</Badge>
+                <Card key={job.id}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                    <div>
+                      <div style={{ fontWeight: 600, color: t.text, fontSize: "15px" }}>{job.address}</div>
+                      <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.builder && (job.builder + " — ")}{job.type}</div>
                     </div>
-                    {job.notes && <div style={{ fontSize: "13px", color: theme.textMuted, background: theme.bg, padding: "10px 12px", borderRadius: "6px", marginBottom: "12px", borderLeft: "3px solid " + theme.accent }}><strong>Office Notes:</strong> {job.notes}</div>}
-                    {jobUpdates.length > 0 && (
-                      <div style={{ marginBottom: "12px" }}>
-                        <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", color: theme.textDim, marginBottom: "8px", fontWeight: 600 }}>Update Log</div>
-                        {jobUpdates.slice(0, 3).map((u) => {
-                          const uStatus = STATUS_OPTIONS.find((s) => s.value === u.status);
-                          return (
-                            <div key={u.id} style={{ fontSize: "13px", color: theme.textMuted, padding: "8px 0", borderBottom: "1px solid " + theme.border, display: "flex", gap: "8px" }}>
-                              <span style={{ color: theme.textDim, flexShrink: 0 }}>{u.timeStr}</span>
-                              <span>
-                                <Badge color={uStatus?.color} bg={uStatus?.bg}>{uStatus?.label}</Badge>
-                                {u.eta && <span style={{ marginLeft: "8px" }}>ETA: {u.eta}</span>}
-                                {u.notes && <span style={{ display: "block", marginTop: "4px", color: theme.textDim }}>{u.notes}</span>}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <Button onClick={() => setActiveJob(job)} style={{ width: "100%" }}>SEND UPDATE</Button>
+                    <Badge color={statusObj.color} bg={statusObj.bg}>{statusObj.label}</Badge>
                   </div>
+                  {job.notes && <div style={{ fontSize: "13px", color: t.textSecondary, background: t.bg, padding: "10px 12px", borderRadius: "6px", marginBottom: "10px", borderLeft: "3px solid " + t.accent }}>Office: {job.notes}</div>}
+                  {jobUpdates.length > 0 && (
+                    <div style={{ marginBottom: "10px" }}>
+                      <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: t.textMuted, marginBottom: "6px", fontWeight: 600 }}>Update Log</div>
+                      {jobUpdates.slice(0, 3).map((u) => {
+                        const uStatus = STATUS_OPTIONS.find((s) => s.value === u.status);
+                        return (
+                          <div key={u.id} style={{ fontSize: "12.5px", color: t.textSecondary, padding: "6px 0", borderBottom: "1px solid " + t.borderLight, display: "flex", gap: "8px" }}>
+                            <span style={{ color: t.textMuted, flexShrink: 0 }}>{u.timeStr}</span>
+                            <span>
+                              <Badge color={uStatus?.color} bg={uStatus?.bg}>{uStatus?.label}</Badge>
+                              {u.eta && <span style={{ marginLeft: "8px" }}>ETA: {u.eta}</span>}
+                              {u.notes && <span style={{ display: "block", marginTop: "3px", color: t.textMuted }}>{u.notes}</span>}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <Button onClick={() => setActiveJob(job)} style={{ width: "100%" }}>Send Update</Button>
                 </Card>
               );
             })}
@@ -339,34 +330,22 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
 
         {crewView === "tickets" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <div>
-                <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "24px", fontWeight: 600, color: theme.text, margin: "0 0 4px" }}>TRUCK ISSUES</h2>
-                <p style={{ color: theme.textMuted, fontSize: "13px", margin: 0 }}>Report problems with equipment or the truck</p>
-              </div>
-              <Button onClick={() => setShowTicketForm(true)}>+ REPORT</Button>
-            </div>
-            {myTickets.length === 0 ? (
-              <Card style={{ textAlign: "center", padding: "48px 24px" }}>
-                <div style={{ fontSize: "36px", marginBottom: "12px" }}>✅</div>
-                <div style={{ color: theme.textMuted, fontSize: "15px" }}>No issues reported for this truck.</div>
-                <div style={{ color: theme.textDim, fontSize: "13px", marginTop: "6px" }}>Tap "+ Report" if something needs attention.</div>
-              </Card>
-            ) : myTickets.map((ticket) => {
+            <SectionHeader title="Truck Issues" right={<Button onClick={() => setShowTicketForm(true)}>+ Report Issue</Button>} />
+            {myTickets.length === 0 ? <EmptyState text="No issues reported for this truck." sub="Tap '+ Report Issue' if something needs attention." /> : myTickets.map((ticket) => {
               const prioObj = TICKET_PRIORITIES.find((p) => p.value === ticket.priority);
               const statObj = TICKET_STATUSES.find((s) => s.value === ticket.status);
               return (
                 <Card key={ticket.id}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "8px" }}>
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
                       <Badge color={prioObj?.color} bg={prioObj?.bg}>{prioObj?.label?.split("—")[0]?.trim()}</Badge>
                       <Badge color={statObj?.color} bg={statObj?.bg}>{statObj?.label}</Badge>
                     </div>
-                    <span style={{ fontSize: "12px", color: theme.textDim, flexShrink: 0 }}>{dateStr(ticket.timestamp)}</span>
+                    <span style={{ fontSize: "11.5px", color: t.textMuted, flexShrink: 0 }}>{dateStr(ticket.timestamp)}</span>
                   </div>
-                  <div style={{ fontSize: "14px", color: theme.text, lineHeight: 1.5 }}>{ticket.description}</div>
-                  <div style={{ fontSize: "12px", color: theme.textDim, marginTop: "8px" }}>Submitted by {ticket.submittedBy}</div>
-                  {ticket.adminNote && <div style={{ fontSize: "13px", color: theme.textMuted, background: theme.bg, padding: "10px 12px", borderRadius: "6px", marginTop: "10px", borderLeft: "3px solid " + theme.accent }}><strong>Office Response:</strong> {ticket.adminNote}</div>}
+                  <div style={{ fontSize: "14px", color: t.text, lineHeight: 1.5 }}>{ticket.description}</div>
+                  <div style={{ fontSize: "12px", color: t.textMuted, marginTop: "6px" }}>Submitted by {ticket.submittedBy}</div>
+                  {ticket.adminNote && <div style={{ fontSize: "13px", color: t.textSecondary, background: t.bg, padding: "10px 12px", borderRadius: "6px", marginTop: "10px", borderLeft: "3px solid " + t.accent }}>Office: {ticket.adminNote}</div>}
                 </Card>
               );
             })}
@@ -376,25 +355,25 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
 
       {activeJob && (
         <Modal title="Job Update" onClose={() => setActiveJob(null)}>
-          <div style={{ fontSize: "14px", color: theme.textMuted, marginBottom: "18px" }}><strong style={{ color: theme.text }}>{activeJob.address}</strong><br />{activeJob.type}</div>
+          <div style={{ fontSize: "13.5px", color: t.textMuted, marginBottom: "18px" }}><strong style={{ color: t.text }}>{activeJob.address}</strong> — {activeJob.type}</div>
           <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} options={STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }))} />
-          <Input label="Time Estimate" placeholder="e.g. 2 more hours, done by 3pm..." value={eta} onChange={(e) => setEta(e.target.value)} />
-          <TextArea label="Notes" placeholder="Any issues, material needs, progress details..." value={notes} onChange={(e) => setNotes(e.target.value)} />
-          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+          <Input label="Time Estimate" placeholder="e.g. 2 more hours, done by 3pm" value={eta} onChange={(e) => setEta(e.target.value)} />
+          <TextArea label="Notes" placeholder="Issues, material needs, progress details..." value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
             <Button variant="secondary" onClick={() => setActiveJob(null)} style={{ flex: 1 }}>Cancel</Button>
-            <Button onClick={handleSubmit} style={{ flex: 1 }}>SUBMIT UPDATE</Button>
+            <Button onClick={handleSubmit} style={{ flex: 1 }}>Submit</Button>
           </div>
         </Modal>
       )}
 
       {showTicketForm && (
         <Modal title="Report Truck Issue" onClose={() => setShowTicketForm(false)}>
-          <div style={{ fontSize: "13px", color: theme.textMuted, marginBottom: "18px", background: theme.bg, padding: "12px", borderRadius: "6px" }}>🚛 Reporting for <strong style={{ color: theme.text }}>{truck.name}</strong></div>
-          <TextArea label="What's the problem?" placeholder="Describe the issue... e.g. spray gun leaking at the tip, generator won't start, flat tire on rear passenger side, hose has a kink at 50ft mark..." value={ticketDesc} onChange={(e) => setTicketDesc(e.target.value)} style={{ minHeight: "120px" }} />
-          <Select label="How urgent is this?" value={ticketPriority} onChange={(e) => setTicketPriority(e.target.value)} options={TICKET_PRIORITIES.map((p) => ({ value: p.value, label: p.label }))} />
-          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+          <div style={{ fontSize: "13px", color: t.textMuted, marginBottom: "16px", background: t.bg, padding: "10px 12px", borderRadius: "6px" }}>Reporting for <strong style={{ color: t.text }}>{truck.name}</strong></div>
+          <TextArea label="Describe the problem" placeholder="e.g. spray gun leaking at the tip, generator won't start, flat tire on rear passenger side..." value={ticketDesc} onChange={(e) => setTicketDesc(e.target.value)} style={{ minHeight: "110px" }} />
+          <Select label="Priority" value={ticketPriority} onChange={(e) => setTicketPriority(e.target.value)} options={TICKET_PRIORITIES.map((p) => ({ value: p.value, label: p.label }))} />
+          <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
             <Button variant="secondary" onClick={() => setShowTicketForm(false)} style={{ flex: 1 }}>Cancel</Button>
-            <Button onClick={handleTicketSubmit} disabled={!ticketDesc.trim()} style={{ flex: 1 }}>SUBMIT TICKET</Button>
+            <Button onClick={handleTicketSubmit} disabled={!ticketDesc.trim()} style={{ flex: 1 }}>Submit Ticket</Button>
           </div>
         </Modal>
       )}
@@ -416,42 +395,39 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
   const [ticketFilter, setTicketFilter] = useState("active");
 
   const todaysJobs = jobs.filter((j) => j.date === selectedDate);
-  const openTicketCount = tickets.filter((t) => t.status === "open").length;
-  const filteredTickets = ticketFilter === "active" ? tickets.filter((t) => t.status !== "resolved") : tickets;
+  const openTicketCount = tickets.filter((tk) => tk.status === "open").length;
+  const filteredTickets = ticketFilter === "active" ? tickets.filter((tk) => tk.status !== "resolved") : tickets;
   const sortedTickets = [...filteredTickets].sort((a, b) => {
     const prioOrder = { critical: 0, high: 1, medium: 2, low: 3 };
     if (prioOrder[a.priority] !== prioOrder[b.priority]) return prioOrder[a.priority] - prioOrder[b.priority];
     return new Date(b.timestamp) - new Date(a.timestamp);
   });
-
-  const getLatestUpdate = (jobId) => {
-    const u = updates.filter((u) => u.jobId === jobId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    return u.length > 0 ? u[0] : null;
-  };
-
+  const getLatestUpdate = (jobId) => { const u = updates.filter((u) => u.jobId === jobId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); return u.length > 0 ? u[0] : null; };
   const handleAddJob = () => { onAddJob({ ...jobForm }); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: selectedDate, notes: "" }); setShowAddJob(false); };
   const handleAddTruck = () => { onAddTruck({ ...truckForm }); setTruckForm({ name: "", members: "" }); setShowAddTruck(false); };
   const handleTicketUpdate = () => { onUpdateTicket(activeTicket.id, { status: ticketStatus, adminNote: ticketNote }); setActiveTicket(null); setTicketStatus("acknowledged"); setTicketNote(""); };
-
   const recentUpdates = [...updates].filter((u) => u.status !== "completed").sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30);
-  const tabStyle = (active) => ({ padding: "10px 18px", background: active ? theme.accent : "transparent", color: active ? "#000" : theme.textMuted, border: "none", borderRadius: "6px", fontSize: "13px", fontWeight: 600, cursor: "pointer", letterSpacing: "0.5px", textTransform: "uppercase", fontFamily: "inherit", position: "relative" });
+
+  const tabStyle = (active) => ({ padding: "8px 16px", background: active ? t.accent : "transparent", color: active ? "#fff" : t.textMuted, border: active ? "none" : "1px solid " + t.border, borderRadius: "6px", fontSize: "12.5px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", position: "relative" });
+
+  const hasCompleted = todaysJobs.some((j) => { const u = getLatestUpdate(j.id); return u && u.status === "completed"; });
 
   return (
-    <div style={{ minHeight: "100vh", background: theme.bg }}>
-      <div style={{ background: theme.surface, borderBottom: "1px solid " + theme.border, padding: "14px 20px", position: "sticky", top: 0, zIndex: 100 }}>
+    <div style={{ minHeight: "100vh", background: t.bg }}>
+      <div style={{ background: t.surface, borderBottom: "1px solid " + t.border, padding: "12px 20px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: "900px", margin: "0 auto" }}>
-          <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "20px", fontWeight: 700, color: theme.accent }}>IST <span style={{ color: theme.textDim, fontWeight: 400, fontSize: "14px" }}>DISPATCH</span></div>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "13px", color: theme.textMuted }}>{adminName}</span>
-            <Button variant="ghost" onClick={onLogout} style={{ fontSize: "12px" }}>LOG OUT</Button>
+          <div style={{ fontSize: "15px", fontWeight: 600, color: t.text }}>IST Dispatch</div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "12.5px", color: t.textMuted }}>{adminName}</span>
+            <Button variant="ghost" onClick={onLogout} style={{ fontSize: "12px" }}>Log Out</Button>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "6px", marginTop: "12px", maxWidth: "900px", margin: "12px auto 0", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "6px", marginTop: "10px", maxWidth: "900px", margin: "10px auto 0", flexWrap: "wrap" }}>
           <button style={tabStyle(view === "schedule")} onClick={() => setView("schedule")}>Schedule</button>
           <button style={tabStyle(view === "feed")} onClick={() => setView("feed")}>Live Feed</button>
           <button style={tabStyle(view === "tickets")} onClick={() => setView("tickets")}>
             Tickets
-            {openTicketCount > 0 && <span style={{ position: "absolute", top: "-4px", right: "-4px", background: theme.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
+            {openTicketCount > 0 && <span style={{ position: "absolute", top: "-5px", right: "-5px", background: t.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "17px", height: "17px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
           </button>
           <button style={tabStyle(view === "trucks")} onClick={() => setView("trucks")}>Trucks</button>
         </div>
@@ -461,20 +437,13 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
 
         {view === "schedule" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
-              <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "24px", fontWeight: 600, color: theme.text, margin: 0 }}>SCHEDULE</h2>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-                <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ padding: "8px 12px", background: theme.card, border: "1px solid " + theme.border, borderRadius: "6px", color: theme.text, fontSize: "14px", fontFamily: "inherit", colorScheme: "dark" }} />
-                {todaysJobs.some((j) => { const u = getLatestUpdate(j.id); return u && u.status === "completed"; }) && (
-                  <Button variant="secondary" onClick={() => { todaysJobs.forEach((j) => { const u = getLatestUpdate(j.id); if (u && u.status === "completed") onDeleteJob(j.id); }); }} style={{ fontSize: "12px", padding: "8px 14px" }}>CLEAR DONE</Button>
-                )}
-                <Button onClick={() => { setJobForm({ ...jobForm, date: selectedDate }); setShowAddJob(true); }}>+ ADD JOB</Button>
-              </div>
-            </div>
-            {todaysJobs.length === 0 ? (
-              <Card style={{ textAlign: "center", padding: "48px" }}><div style={{ fontSize: "36px", marginBottom: "12px" }}>📅</div><div style={{ color: theme.textMuted }}>No jobs scheduled for {selectedDate === todayStr() ? "today" : selectedDate}.</div></Card>
-            ) : todaysJobs.map((job) => {
-              const truck = trucks.find((t) => t.id === job.truckId);
+            <SectionHeader title="Schedule" right={<>
+              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ padding: "7px 10px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "13px", fontFamily: "inherit" }} />
+              {hasCompleted && <Button variant="secondary" onClick={() => { todaysJobs.forEach((j) => { const u = getLatestUpdate(j.id); if (u && u.status === "completed") onDeleteJob(j.id); }); }} style={{ fontSize: "12px", padding: "7px 12px" }}>Clear Done</Button>}
+              <Button onClick={() => { setJobForm({ ...jobForm, date: selectedDate }); setShowAddJob(true); }}>+ Add Job</Button>
+            </>} />
+            {todaysJobs.length === 0 ? <EmptyState text={"No jobs scheduled for " + (selectedDate === todayStr() ? "today" : selectedDate) + "."} /> : todaysJobs.map((job) => {
+              const truck = trucks.find((tr) => tr.id === job.truckId);
               const latest = getLatestUpdate(job.id);
               const statusObj = latest ? STATUS_OPTIONS.find((s) => s.value === latest.status) : STATUS_OPTIONS[0];
               const jobUpdates = updates.filter((u) => u.jobId === job.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -482,30 +451,30 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
                 <Card key={job.id}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "8px" }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, color: theme.text, fontSize: "16px" }}>{job.address}</div>
-                      <div style={{ fontSize: "13px", color: theme.textMuted, marginTop: "2px" }}>{job.builder && (job.builder + " · ")}{job.type}</div>
-                      <div style={{ fontSize: "13px", color: theme.textDim, marginTop: "4px" }}>{truck ? "🚛 " + truck.name : "⚠️ Unassigned"}</div>
+                      <div style={{ fontWeight: 600, color: t.text, fontSize: "15px" }}>{job.address}</div>
+                      <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.builder && (job.builder + " — ")}{job.type}</div>
+                      <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "3px" }}>{truck ? truck.name : "Unassigned"}</div>
                     </div>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                       <Badge color={statusObj.color} bg={statusObj.bg}>{statusObj.label}</Badge>
-                      <Button variant="danger" onClick={() => onDeleteJob(job.id)} style={{ padding: "6px 10px", fontSize: "12px" }}>✕</Button>
+                      <Button variant="danger" onClick={() => onDeleteJob(job.id)} style={{ padding: "4px 8px", fontSize: "11px" }}>Remove</Button>
                     </div>
                   </div>
-                  {job.notes && <div style={{ fontSize: "13px", color: theme.textDim, marginTop: "10px", fontStyle: "italic" }}>Notes: {job.notes}</div>}
+                  {job.notes && <div style={{ fontSize: "13px", color: t.textMuted, marginTop: "8px", fontStyle: "italic" }}>Notes: {job.notes}</div>}
                   {jobUpdates.length > 0 && (
-                    <div style={{ marginTop: "14px", paddingTop: "12px", borderTop: "1px solid " + theme.border }}>
-                      <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1px", color: theme.textDim, marginBottom: "8px", fontWeight: 600 }}>Crew Updates</div>
+                    <div style={{ marginTop: "12px", paddingTop: "10px", borderTop: "1px solid " + t.borderLight }}>
+                      <div style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.5px", color: t.textMuted, marginBottom: "6px", fontWeight: 600 }}>Crew Updates</div>
                       {jobUpdates.map((u) => {
                         const uStatus = STATUS_OPTIONS.find((s) => s.value === u.status);
                         return (
-                          <div key={u.id} style={{ fontSize: "13px", padding: "8px 0", borderBottom: "1px solid rgba(42,58,74,0.5)", color: theme.textMuted }}>
+                          <div key={u.id} style={{ fontSize: "12.5px", padding: "6px 0", borderBottom: "1px solid " + t.borderLight, color: t.textSecondary }}>
                             <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                              <span style={{ color: theme.textDim }}>{u.timeStr}</span>
-                              <strong style={{ color: theme.text }}>{u.crewName}</strong>
+                              <span style={{ color: t.textMuted }}>{u.timeStr}</span>
+                              <strong style={{ color: t.text }}>{u.crewName}</strong>
                               <Badge color={uStatus?.color} bg={uStatus?.bg}>{uStatus?.label}</Badge>
-                              {u.eta && <span>· ETA: {u.eta}</span>}
+                              {u.eta && <span>— ETA: {u.eta}</span>}
                             </div>
-                            {u.notes && <div style={{ marginTop: "4px", color: theme.textDim, paddingLeft: "4px" }}>{u.notes}</div>}
+                            {u.notes && <div style={{ marginTop: "3px", color: t.textMuted, paddingLeft: "2px" }}>{u.notes}</div>}
                           </div>
                         );
                       })}
@@ -519,27 +488,25 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
 
         {view === "feed" && (
           <>
-            <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "24px", fontWeight: 600, color: theme.text, margin: "0 0 20px" }}>LIVE FEED</h2>
-            {recentUpdates.length === 0 ? (
-              <Card style={{ textAlign: "center", padding: "48px" }}><div style={{ color: theme.textMuted }}>No crew updates yet.</div></Card>
-            ) : recentUpdates.map((u) => {
+            <SectionHeader title="Live Feed" />
+            {recentUpdates.length === 0 ? <EmptyState text="No active crew updates." /> : recentUpdates.map((u) => {
               const job = jobs.find((j) => j.id === u.jobId);
-              const truck = trucks.find((t) => t.id === u.truckId);
+              const truck = trucks.find((tr) => tr.id === u.truckId);
               const statusObj = STATUS_OPTIONS.find((s) => s.value === u.status);
               return (
                 <Card key={u.id}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "6px" }}>
                     <div>
-                      <div style={{ fontWeight: 700, color: theme.text, fontSize: "15px" }}>{u.crewName} — {truck?.name || "Unknown"}</div>
-                      <div style={{ fontSize: "13px", color: theme.textMuted, marginTop: "2px" }}>{job?.address || "Unknown"} · {job?.type}</div>
+                      <div style={{ fontWeight: 600, color: t.text, fontSize: "14px" }}>{u.crewName} — {truck?.name || "Unknown"}</div>
+                      <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job?.address || "Unknown"} — {job?.type}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
                       <Badge color={statusObj?.color} bg={statusObj?.bg}>{statusObj?.label}</Badge>
-                      <div style={{ fontSize: "12px", color: theme.textDim, marginTop: "4px" }}>{u.timeStr}</div>
+                      <div style={{ fontSize: "11.5px", color: t.textMuted, marginTop: "3px" }}>{u.timeStr}</div>
                     </div>
                   </div>
-                  {u.eta && <div style={{ fontSize: "13px", color: theme.textMuted, marginTop: "8px" }}>⏱ ETA: {u.eta}</div>}
-                  {u.notes && <div style={{ fontSize: "13px", color: theme.textDim, marginTop: "6px", fontStyle: "italic" }}>"{u.notes}"</div>}
+                  {u.eta && <div style={{ fontSize: "12.5px", color: t.textSecondary, marginTop: "6px" }}>ETA: {u.eta}</div>}
+                  {u.notes && <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "4px" }}>{u.notes}</div>}
                 </Card>
               );
             })}
@@ -548,35 +515,28 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
 
         {view === "tickets" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
-              <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "24px", fontWeight: 600, color: theme.text, margin: 0 }}>TRUCK TICKETS</h2>
-              <div style={{ display: "flex", gap: "6px" }}>
-                <button onClick={() => setTicketFilter("active")} style={{ padding: "8px 14px", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.5px", textTransform: "uppercase", background: ticketFilter === "active" ? theme.accent : theme.surfaceHover, color: ticketFilter === "active" ? "#000" : theme.textMuted }}>
-                  Active ({tickets.filter((t) => t.status !== "resolved").length})
-                </button>
-                <button onClick={() => setTicketFilter("all")} style={{ padding: "8px 14px", border: "none", borderRadius: "6px", fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.5px", textTransform: "uppercase", background: ticketFilter === "all" ? theme.accent : theme.surfaceHover, color: ticketFilter === "all" ? "#000" : theme.textMuted }}>
-                  All ({tickets.length})
-                </button>
+            <SectionHeader title="Truck Tickets" right={
+              <div style={{ display: "flex", gap: "4px" }}>
+                <button onClick={() => setTicketFilter("active")} style={{ padding: "6px 12px", border: "1px solid " + t.border, borderRadius: "6px", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", background: ticketFilter === "active" ? t.accent : "#fff", color: ticketFilter === "active" ? "#fff" : t.textMuted }}>Active ({tickets.filter((tk) => tk.status !== "resolved").length})</button>
+                <button onClick={() => setTicketFilter("all")} style={{ padding: "6px 12px", border: "1px solid " + t.border, borderRadius: "6px", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", background: ticketFilter === "all" ? t.accent : "#fff", color: ticketFilter === "all" ? "#fff" : t.textMuted }}>All ({tickets.length})</button>
               </div>
-            </div>
-            {sortedTickets.length === 0 ? (
-              <Card style={{ textAlign: "center", padding: "48px" }}><div style={{ fontSize: "36px", marginBottom: "12px" }}>✅</div><div style={{ color: theme.textMuted }}>{ticketFilter === "active" ? "No active tickets. All clear!" : "No tickets submitted yet."}</div></Card>
-            ) : sortedTickets.map((ticket) => {
+            } />
+            {sortedTickets.length === 0 ? <EmptyState text={ticketFilter === "active" ? "No active tickets. All clear." : "No tickets submitted yet."} /> : sortedTickets.map((ticket) => {
               const prioObj = TICKET_PRIORITIES.find((p) => p.value === ticket.priority);
               const statObj = TICKET_STATUSES.find((s) => s.value === ticket.status);
               return (
                 <Card key={ticket.id} onClick={() => { setActiveTicket(ticket); setTicketStatus(ticket.status === "open" ? "acknowledged" : ticket.status); setTicketNote(ticket.adminNote || ""); }} style={{ cursor: "pointer" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "10px", flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
                       <Badge color={prioObj?.color} bg={prioObj?.bg}>{prioObj?.label?.split("—")[0]?.trim()}</Badge>
                       <Badge color={statObj?.color} bg={statObj?.bg}>{statObj?.label}</Badge>
-                      <span style={{ fontSize: "13px", fontWeight: 600, color: theme.text }}>🚛 {ticket.truckName}</span>
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: t.text }}>{ticket.truckName}</span>
                     </div>
-                    <span style={{ fontSize: "12px", color: theme.textDim }}>{dateStr(ticket.timestamp)}</span>
+                    <span style={{ fontSize: "11.5px", color: t.textMuted }}>{dateStr(ticket.timestamp)}</span>
                   </div>
-                  <div style={{ fontSize: "14px", color: theme.text, lineHeight: 1.5 }}>{ticket.description}</div>
-                  <div style={{ fontSize: "12px", color: theme.textDim, marginTop: "8px" }}>Submitted by {ticket.submittedBy}</div>
-                  {ticket.adminNote && <div style={{ fontSize: "13px", color: theme.textMuted, background: theme.bg, padding: "10px 12px", borderRadius: "6px", marginTop: "10px", borderLeft: "3px solid " + theme.success }}><strong>Response:</strong> {ticket.adminNote}</div>}
+                  <div style={{ fontSize: "14px", color: t.text, lineHeight: 1.5 }}>{ticket.description}</div>
+                  <div style={{ fontSize: "12px", color: t.textMuted, marginTop: "6px" }}>Submitted by {ticket.submittedBy}</div>
+                  {ticket.adminNote && <div style={{ fontSize: "13px", color: t.textSecondary, background: t.bg, padding: "10px 12px", borderRadius: "6px", marginTop: "8px", borderLeft: "3px solid #15803d" }}>Response: {ticket.adminNote}</div>}
                 </Card>
               );
             })}
@@ -585,29 +545,26 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
 
         {view === "trucks" && (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-              <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "24px", fontWeight: 600, color: theme.text, margin: 0 }}>TRUCKS / CREWS</h2>
-              <Button onClick={() => setShowAddTruck(true)}>+ ADD TRUCK</Button>
-            </div>
-            {trucks.length === 0 ? (
-              <Card style={{ textAlign: "center", padding: "48px" }}><div style={{ color: theme.textMuted }}>No trucks yet. Add one to get started.</div></Card>
-            ) : trucks.map((t) => {
-              const truckJobs = jobs.filter((j) => j.truckId === t.id && j.date === todayStr());
-              const truckTickets = tickets.filter((tk) => tk.truckId === t.id && tk.status !== "resolved");
+            <SectionHeader title="Trucks / Crews" right={<Button onClick={() => setShowAddTruck(true)}>+ Add Truck</Button>} />
+            {trucks.length === 0 ? <EmptyState text="No trucks yet. Add one to get started." /> : trucks.map((tr) => {
+              const truckJobs = jobs.filter((j) => j.truckId === tr.id && j.date === todayStr());
+              const truckTickets = tickets.filter((tk) => tk.truckId === tr.id && tk.status !== "resolved");
               return (
-                <Card key={t.id}>
+                <Card key={tr.id}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span style={{ fontSize: "24px" }}>🚛</span>
+                      <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: t.accentBg, color: t.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7V8zM5.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM18.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/></svg>
+                      </div>
                       <div>
-                        <div style={{ fontWeight: 700, color: theme.text, fontSize: "16px" }}>{t.name}</div>
-                        {t.members && <div style={{ fontSize: "13px", color: theme.textMuted }}>{t.members}</div>}
+                        <div style={{ fontWeight: 600, color: t.text, fontSize: "14.5px" }}>{tr.name}</div>
+                        {tr.members && <div style={{ fontSize: "12.5px", color: t.textMuted }}>{tr.members}</div>}
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                       <Badge>{truckJobs.length} job{truckJobs.length !== 1 ? "s" : ""} today</Badge>
-                      {truckTickets.length > 0 && <Badge color={theme.danger} bg="rgba(239,68,68,0.15)">{truckTickets.length} issue{truckTickets.length !== 1 ? "s" : ""}</Badge>}
-                      <Button variant="danger" onClick={() => onDeleteTruck(t.id)} style={{ padding: "6px 10px", fontSize: "12px" }}>✕</Button>
+                      {truckTickets.length > 0 && <Badge color="#b91c1c" bg="#fee2e2">{truckTickets.length} issue{truckTickets.length !== 1 ? "s" : ""}</Badge>}
+                      <Button variant="danger" onClick={() => onDeleteTruck(tr.id)} style={{ padding: "4px 8px", fontSize: "11px" }}>Remove</Button>
                     </div>
                   </div>
                 </Card>
@@ -621,14 +578,14 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
         <Modal title="Add Job" onClose={() => setShowAddJob(false)}>
           <Input label="Job Address" placeholder="e.g. 1234 E 91st St, Tulsa" value={jobForm.address} onChange={(e) => setJobForm({ ...jobForm, address: e.target.value })} />
           <Input label="Builder / Customer" placeholder="e.g. Smith Residence, ABC Builders" value={jobForm.builder} onChange={(e) => setJobForm({ ...jobForm, builder: e.target.value })} />
-          <Select label="Job Type" value={jobForm.type} onChange={(e) => setJobForm({ ...jobForm, type: e.target.value })} options={JOB_TYPES.map((t) => ({ value: t, label: t }))} />
-          <Select label="Assign to Truck" value={jobForm.truckId} onChange={(e) => setJobForm({ ...jobForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...trucks.map((t) => ({ value: t.id, label: t.name }))]} />
-          <div style={{ marginBottom: "14px" }}>
-            <label style={{ display: "block", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", color: theme.textMuted, marginBottom: "6px" }}>Date</label>
-            <input type="date" value={jobForm.date} onChange={(e) => setJobForm({ ...jobForm, date: e.target.value })} style={{ width: "100%", padding: "10px 14px", background: theme.bg, border: "1px solid " + theme.border, borderRadius: "6px", color: theme.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box", colorScheme: "dark" }} />
+          <Select label="Job Type" value={jobForm.type} onChange={(e) => setJobForm({ ...jobForm, type: e.target.value })} options={JOB_TYPES.map((jt) => ({ value: jt, label: jt }))} />
+          <Select label="Assign to Truck" value={jobForm.truckId} onChange={(e) => setJobForm({ ...jobForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...trucks.map((tr) => ({ value: tr.id, label: tr.name }))]} />
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Date</label>
+            <input type="date" value={jobForm.date} onChange={(e) => setJobForm({ ...jobForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           <TextArea label="Office Notes (visible to crew)" placeholder="Special instructions, materials needed..." value={jobForm.notes} onChange={(e) => setJobForm({ ...jobForm, notes: e.target.value })} />
-          <Button onClick={handleAddJob} disabled={!jobForm.address.trim()} style={{ width: "100%" }}>ADD JOB TO SCHEDULE</Button>
+          <Button onClick={handleAddJob} disabled={!jobForm.address.trim()} style={{ width: "100%" }}>Add Job to Schedule</Button>
         </Modal>
       )}
 
@@ -636,24 +593,24 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck,
         <Modal title="Add Truck" onClose={() => setShowAddTruck(false)}>
           <Input label="Truck Name" placeholder="e.g. Truck 1, White F-150, Foam Rig" value={truckForm.name} onChange={(e) => setTruckForm({ ...truckForm, name: e.target.value })} />
           <Input label="Crew Members (optional)" placeholder="e.g. Mike, Carlos, David" value={truckForm.members} onChange={(e) => setTruckForm({ ...truckForm, members: e.target.value })} />
-          <Button onClick={handleAddTruck} disabled={!truckForm.name.trim()} style={{ width: "100%" }}>ADD TRUCK</Button>
+          <Button onClick={handleAddTruck} disabled={!truckForm.name.trim()} style={{ width: "100%" }}>Add Truck</Button>
         </Modal>
       )}
 
       {activeTicket && (
         <Modal title="Respond to Ticket" onClose={() => setActiveTicket(null)}>
-          <div style={{ background: theme.bg, padding: "14px", borderRadius: "8px", marginBottom: "18px" }}>
-            <div style={{ display: "flex", gap: "6px", marginBottom: "10px", flexWrap: "wrap" }}>
+          <div style={{ background: t.bg, padding: "14px", borderRadius: "8px", marginBottom: "18px" }}>
+            <div style={{ display: "flex", gap: "5px", marginBottom: "8px", flexWrap: "wrap" }}>
               {(() => { const p = TICKET_PRIORITIES.find((p) => p.value === activeTicket.priority); return <Badge color={p?.color} bg={p?.bg}>{p?.label}</Badge>; })()}
             </div>
-            <div style={{ fontSize: "13px", color: theme.textDim, marginBottom: "4px" }}>🚛 {activeTicket.truckName} · {activeTicket.submittedBy} · {dateStr(activeTicket.timestamp)}</div>
-            <div style={{ fontSize: "15px", color: theme.text, lineHeight: 1.5 }}>{activeTicket.description}</div>
+            <div style={{ fontSize: "12.5px", color: t.textMuted, marginBottom: "4px" }}>{activeTicket.truckName} — {activeTicket.submittedBy} — {dateStr(activeTicket.timestamp)}</div>
+            <div style={{ fontSize: "14px", color: t.text, lineHeight: 1.5 }}>{activeTicket.description}</div>
           </div>
           <Select label="Update Status" value={ticketStatus} onChange={(e) => setTicketStatus(e.target.value)} options={TICKET_STATUSES.map((s) => ({ value: s.value, label: s.label }))} />
-          <TextArea label="Response Note (visible to crew)" placeholder="e.g. Parts ordered, will fix Saturday... Acknowledged, bring it in Friday..." value={ticketNote} onChange={(e) => setTicketNote(e.target.value)} />
-          <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+          <TextArea label="Response Note (visible to crew)" placeholder="e.g. Parts ordered, will fix Saturday..." value={ticketNote} onChange={(e) => setTicketNote(e.target.value)} />
+          <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
             <Button variant="secondary" onClick={() => setActiveTicket(null)} style={{ flex: 1 }}>Cancel</Button>
-            <Button onClick={handleTicketUpdate} style={{ flex: 1 }}>UPDATE TICKET</Button>
+            <Button onClick={handleTicketUpdate} style={{ flex: 1 }}>Update Ticket</Button>
           </div>
         </Modal>
       )}
@@ -694,13 +651,13 @@ export default function App() {
   const handleCrewLogin = (truckId, crewName) => { setCrewSession({ truckId, crewName }); setRole("crew"); };
   const handleAdminLogin = (name) => { setAdminName(name); setRole("admin"); };
 
-  if (loading) return <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "28px", color: theme.accent, letterSpacing: "4px" }}>IST</div></div>;
+  if (loading) return <div style={{ minHeight: "100vh", background: t.bg, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ fontSize: "20px", fontWeight: 600, color: t.textMuted, letterSpacing: "2px" }}>IST</div></div>;
 
   if (!role) return <RoleSelect onSelect={setRole} />;
   if (role === "admin" && !adminName) return <AdminLogin onLogin={handleAdminLogin} onBack={() => setRole(null)} />;
   if (role === "crew" && !crewSession) return <CrewLogin trucks={trucks} onLogin={handleCrewLogin} onBack={() => setRole(null)} />;
   if (role === "crew" && crewSession) {
-    const truck = trucks.find((t) => t.id === crewSession.truckId);
+    const truck = trucks.find((tr) => tr.id === crewSession.truckId);
     if (!truck) return <CrewLogin trucks={trucks} onLogin={handleCrewLogin} onBack={() => setRole(null)} />;
     return <CrewDashboard truck={truck} crewName={crewSession.crewName} jobs={jobs} updates={updates} tickets={tickets} onSubmitUpdate={handleSubmitUpdate} onSubmitTicket={handleSubmitTicket} onLogout={() => { setCrewSession(null); setRole(null); }} />;
   }

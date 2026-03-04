@@ -38,6 +38,7 @@ const TICKET_STATUSES = [
 const OFFICE_PROFILES = ["Skip", "Jordan", "Johnny", "Duck"];
 
 const todayStr = () => new Date().toISOString().split("T")[0];
+const naturalSort = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" });
 const timeStr = () => new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 const dateStr = (iso) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); } catch { return ""; } };
 
@@ -215,7 +216,7 @@ function CrewLogin({ trucks, onLogin, onBack }) {
           <>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "8px" }}>Select Your Truck</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "20px" }}>
-              {trucks.map((tr) => (
+              {[...trucks].sort(naturalSort).map((tr) => (
                 <Card key={tr.id} onClick={() => setSelected(tr.id)} style={{ padding: "12px 16px", cursor: "pointer", borderColor: selected === tr.id ? t.accent : t.border, background: selected === tr.id ? t.accentBg : "#fff" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <div style={{ width: "32px", height: "32px", borderRadius: "6px", background: selected === tr.id ? t.accent : t.bg, color: selected === tr.id ? "#fff" : t.textMuted, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -562,7 +563,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
         {view === "trucks" && (
           <>
             <SectionHeader title="Trucks / Crews" right={<Button onClick={() => setShowAddTruck(true)}>+ Add Truck</Button>} />
-            {trucks.length === 0 ? <EmptyState text="No trucks yet. Add one to get started." /> : trucks.map((tr) => {
+            {trucks.length === 0 ? <EmptyState text="No trucks yet. Add one to get started." /> : [...trucks].sort(naturalSort).map((tr) => {
               const truckJobs = jobs.filter((j) => j.truckId === tr.id && j.date === todayStr());
               const truckTickets = tickets.filter((tk) => tk.truckId === tr.id && tk.status !== "resolved");
               return (
@@ -615,7 +616,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
           <Input label="Job Address" placeholder="e.g. 1234 E 91st St, Tulsa" value={jobForm.address} onChange={(e) => setJobForm({ ...jobForm, address: e.target.value })} />
           <Input label="Builder / Customer" placeholder="e.g. Smith Residence, ABC Builders" value={jobForm.builder} onChange={(e) => setJobForm({ ...jobForm, builder: e.target.value })} />
           <Select label="Job Type" value={jobForm.type} onChange={(e) => setJobForm({ ...jobForm, type: e.target.value })} options={JOB_TYPES.map((jt) => ({ value: jt, label: jt }))} />
-          <Select label="Assign to Truck" value={jobForm.truckId} onChange={(e) => setJobForm({ ...jobForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...trucks.map((tr) => ({ value: tr.id, label: tr.name }))]} />
+          <Select label="Assign to Truck" value={jobForm.truckId} onChange={(e) => setJobForm({ ...jobForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...[...trucks].sort(naturalSort).map((tr) => ({ value: tr.id, label: tr.name }))]} />
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Date</label>
             <input type="date" value={jobForm.date} onChange={(e) => setJobForm({ ...jobForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
@@ -656,7 +657,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
           <Input label="Job Address" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
           <Input label="Builder / Customer" value={editForm.builder} onChange={(e) => setEditForm({ ...editForm, builder: e.target.value })} />
           <Select label="Job Type" value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} options={JOB_TYPES.map((jt) => ({ value: jt, label: jt }))} />
-          <Select label="Assign to Truck" value={editForm.truckId} onChange={(e) => setEditForm({ ...editForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...trucks.map((tr) => ({ value: tr.id, label: tr.name }))]} />
+          <Select label="Assign to Truck" value={editForm.truckId} onChange={(e) => setEditForm({ ...editForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...[...trucks].sort(naturalSort).map((tr) => ({ value: tr.id, label: tr.name }))]} />
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Date</label>
             <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />

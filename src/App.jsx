@@ -8,6 +8,8 @@ import {
   updateDoc,
   onSnapshot,
   getDocs,
+  getDoc,
+  setDoc,
   query,
   where,
   serverTimestamp,
@@ -179,6 +181,118 @@ function RoleSelect({ onSelect }) {
 }
 
 function AdminLogin({ onLogin, onBack }) {
+  const [selected, setSelected] = useState(null);
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [mode, setMode] = useState(null); // null | "enter" | "create"
+  const [error, setError] = useState("");
+  const [storedHash, setStoredHash] = useState(null);
+
+  const hashPin = (p) => { let h = 0; const s = p + "ist_salt"; for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; } return String(h); };
+
+  const handleSelect = async (name) => {
+    setSelected(name);
+    setPin("");
+    setConfirmPin("");
+    setError("");
+    try {
+      const snap = await getDoc(doc(db, "pins", name.toLowerCase()));
+      if (snap.exists()) {
+        setStoredHash(snap.data().hash);
+        setMode("enter");
+      } else {
+        setMode("create");
+      }
+    } catch {
+      setMode("create");
+    }
+  };
+
+  const handleEnterPin = () => {
+    if (hashPin(pin) === storedHash) {
+      onLogin(selected);
+    } else {
+      setError("Incorrect PIN. Try again.");
+      setPin("");
+    }
+  };
+
+  const handleCreatePin = async () => {
+    if (pin.length !== 4 || !/^\d{4}$/.test(pin)) { setError("PIN must be exactly 4 digits."); return; }
+    if (pin !== confirmPin) { setError("PINs don't match. Try again."); return; }
+    await setDoc(doc(db, "pins", selected.toLowerCase()), { hash: hashPin(pin), user: selected });
+    onLogin(selected);
+  };
+
+  if (selected && mode === "enter") {
+    return (
+      <div style={{ minHeight: "100vh", background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+        <div style={{ maxWidth: "340px", width: "100%" }}>
+          <button onClick={() => { setSelected(null); setMode(null); }} style={{ background: "none", border: "none", color: t.textMuted, fontSize: "13px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+            <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: t.accentBg, color: t.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 700 }}>{selected[0]}</div>
+            <div>
+              <div style={{ fontSize: "18px", fontWeight: 600, color: t.text }}>{selected}</div>
+              <div style={{ fontSize: "13px", color: t.textMuted }}>Enter your 4-digit PIN</div>
+            </div>
+          </div>
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="----"
+            value={pin}
+            onChange={(e) => { setPin(e.target.value.replace(/\D/g, "").slice(0, 4)); setError(""); }}
+            onKeyDown={(e) => e.key === "Enter" && pin.length === 4 && handleEnterPin()}
+            autoFocus
+            style={{ width: "100%", padding: "14px", background: "#fff", border: "1px solid " + t.border, borderRadius: "8px", color: t.text, fontSize: "24px", fontFamily: "inherit", textAlign: "center", letterSpacing: "12px", outline: "none", boxSizing: "border-box" }}
+          />
+          {error && <div style={{ color: t.danger, fontSize: "13px", marginTop: "8px", textAlign: "center" }}>{error}</div>}
+          <Button onClick={handleEnterPin} disabled={pin.length !== 4} style={{ width: "100%", marginTop: "14px" }}>Log In</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (selected && mode === "create") {
+    return (
+      <div style={{ minHeight: "100vh", background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+        <div style={{ maxWidth: "340px", width: "100%" }}>
+          <button onClick={() => { setSelected(null); setMode(null); }} style={{ background: "none", border: "none", color: t.textMuted, fontSize: "13px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+            <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: t.accentBg, color: t.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 700 }}>{selected[0]}</div>
+            <div style={{ fontSize: "18px", fontWeight: 600, color: t.text }}>{selected}</div>
+          </div>
+          <p style={{ color: t.textMuted, fontSize: "13.5px", margin: "0 0 20px" }}>First time? Set up a 4-digit PIN.</p>
+          <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Create PIN</label>
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="----"
+            value={pin}
+            onChange={(e) => { setPin(e.target.value.replace(/\D/g, "").slice(0, 4)); setError(""); }}
+            autoFocus
+            style={{ width: "100%", padding: "14px", background: "#fff", border: "1px solid " + t.border, borderRadius: "8px", color: t.text, fontSize: "24px", fontFamily: "inherit", textAlign: "center", letterSpacing: "12px", outline: "none", boxSizing: "border-box", marginBottom: "14px" }}
+          />
+          <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Confirm PIN</label>
+          <input
+            type="password"
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="----"
+            value={confirmPin}
+            onChange={(e) => { setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 4)); setError(""); }}
+            onKeyDown={(e) => e.key === "Enter" && pin.length === 4 && confirmPin.length === 4 && handleCreatePin()}
+            style={{ width: "100%", padding: "14px", background: "#fff", border: "1px solid " + t.border, borderRadius: "8px", color: t.text, fontSize: "24px", fontFamily: "inherit", textAlign: "center", letterSpacing: "12px", outline: "none", boxSizing: "border-box" }}
+          />
+          {error && <div style={{ color: t.danger, fontSize: "13px", marginTop: "8px", textAlign: "center" }}>{error}</div>}
+          <Button onClick={handleCreatePin} disabled={pin.length !== 4 || confirmPin.length !== 4} style={{ width: "100%", marginTop: "14px" }}>Set PIN & Log In</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: t.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
       <div style={{ maxWidth: "380px", width: "100%" }}>
@@ -187,7 +301,7 @@ function AdminLogin({ onLogin, onBack }) {
         <p style={{ color: t.textMuted, fontSize: "13.5px", margin: "0 0 24px" }}>Select your profile</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {OFFICE_PROFILES.map((name) => (
-            <Card key={name} onClick={() => onLogin(name)} style={{ padding: "14px 18px", cursor: "pointer" }}>
+            <Card key={name} onClick={() => handleSelect(name)} style={{ padding: "14px 18px", cursor: "pointer" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                 <div style={{ width: "36px", height: "36px", borderRadius: "8px", background: t.accentBg, color: t.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: 700 }}>{name[0]}</div>
                 <div style={{ fontWeight: 500, color: t.text, fontSize: "15px" }}>{name}</div>

@@ -14,7 +14,7 @@ import {
 } from "firebase/firestore";
 
 // ─── Constants ───
-const JOB_TYPES = ["Attic Removal","Attic Recap","New Construction","Retrofit Wall Injection","Crawl Space","Commercial","Spray Foam","Batt Insulation"];
+const JOB_TYPES = ["Foam","Fiberglass","Removal"];
 const STATUS_OPTIONS = [
   { value: "not_started", label: "Not Started", color: "#6b7280", bg: "#f3f4f6" },
   { value: "en_route", label: "En Route", color: "#1d4ed8", bg: "#dbeafe" },

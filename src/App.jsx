@@ -322,13 +322,13 @@ function CrewLogin({ trucks, onLogin, onBack }) {
       <div style={{ maxWidth: "380px", width: "100%" }}>
         <button onClick={onBack} style={{ background: "none", border: "none", color: t.textMuted, fontSize: "13px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
         <h1 style={{ fontSize: "22px", fontWeight: 600, color: t.text, margin: "0 0 6px" }}>Crew Login</h1>
-        <p style={{ color: t.textMuted, fontSize: "13.5px", margin: "0 0 24px" }}>Select your truck and enter your name</p>
+        <p style={{ color: t.textMuted, fontSize: "13.5px", margin: "0 0 24px" }}>Select your crew and enter your name</p>
         <Input label="Your Name" placeholder="Enter your name" value={crewName} onChange={(e) => setCrewName(e.target.value)} />
         {trucks.length === 0 ? (
-          <EmptyState text="No trucks set up yet." sub="Ask the office to add trucks." />
+          <EmptyState text="No crews set up yet." sub="Ask the office to add your crew." />
         ) : (
           <>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "8px" }}>Select Your Truck</label>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "8px" }}>Select Your Crew</label>
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "20px" }}>
               {[...trucks].sort(naturalSort).map((tr) => (
                 <Card key={tr.id} onClick={() => setSelected(tr.id)} style={{ padding: "12px 16px", cursor: "pointer", borderColor: selected === tr.id ? t.accent : t.border, background: selected === tr.id ? t.accentBg : "#fff" }}>
@@ -394,7 +394,7 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
         <div style={{ display: "flex", gap: "6px", marginTop: "10px" }}>
           <button style={tabStyle(crewView === "jobs")} onClick={() => setCrewView("jobs")}>Jobs</button>
           <button style={tabStyle(crewView === "tickets")} onClick={() => setCrewView("tickets")}>
-            Truck Issues
+            Equipment Issues
             {openTicketCount > 0 && <span style={{ position: "absolute", top: "-5px", right: "-5px", background: t.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "17px", height: "17px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
           </button>
         </div>
@@ -445,7 +445,7 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
 
         {crewView === "tickets" && (
           <>
-            <SectionHeader title="Truck Issues" right={<Button onClick={() => setShowTicketForm(true)}>+ Report Issue</Button>} />
+            <SectionHeader title="Equipment Issues" right={<Button onClick={() => setShowTicketForm(true)}>+ Report Issue</Button>} />
             {myTickets.length === 0 ? <EmptyState text="No issues reported for this truck." sub="Tap '+ Report Issue' if something needs attention." /> : myTickets.map((ticket) => {
               const prioObj = TICKET_PRIORITIES.find((p) => p.value === ticket.priority);
               const statObj = TICKET_STATUSES.find((s) => s.value === ticket.status);
@@ -482,7 +482,7 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
       )}
 
       {showTicketForm && (
-        <Modal title="Report Truck Issue" onClose={() => setShowTicketForm(false)}>
+        <Modal title="Report Issue" onClose={() => setShowTicketForm(false)}>
           <div style={{ fontSize: "13px", color: t.textMuted, marginBottom: "16px", background: t.bg, padding: "10px 12px", borderRadius: "6px" }}>Reporting for <strong style={{ color: t.text }}>{truck.name}</strong></div>
           <TextArea label="Describe the problem" placeholder="e.g. spray gun leaking at the tip, generator won't start, flat tire on rear passenger side..." value={ticketDesc} onChange={(e) => setTicketDesc(e.target.value)} style={{ minHeight: "110px" }} />
           <Select label="Priority" value={ticketPriority} onChange={(e) => setTicketPriority(e.target.value)} options={TICKET_PRIORITIES.map((p) => ({ value: p.value, label: p.label }))} />
@@ -523,12 +523,12 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   });
   const getLatestUpdate = (jobId) => { const u = updates.filter((u) => u.jobId === jobId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); return u.length > 0 ? u[0] : null; };
   const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: selectedDate, notes: "" }); setShowAddJob(false); };
-  const handleAddTruck = () => { onAddTruck({ ...truckForm }); onLogAction("Added truck: " + truckForm.name); setTruckForm({ name: "", members: "" }); setShowAddTruck(false); };
+  const handleAddTruck = () => { onAddTruck({ ...truckForm }); onLogAction("Added crew: " + truckForm.name); setTruckForm({ name: "", members: "" }); setShowAddTruck(false); };
   const handleTicketUpdate = () => { onUpdateTicket(activeTicket.id, { status: ticketStatus, adminNote: ticketNote }); onLogAction("Updated ticket for " + activeTicket.truckName + " to " + ticketStatus); setActiveTicket(null); setTicketStatus("acknowledged"); setTicketNote(""); };
   const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "" }); };
   const handleSaveEdit = () => { onEditJob(editingJob.id, { ...editForm }); onLogAction("Edited job: " + editForm.address); setEditingJob(null); };
   const handleRemoveJob = (job) => { onDeleteJob(job.id); onLogAction("Removed job: " + job.address + " (" + job.type + ")"); };
-  const handleRemoveTruck = (tr) => { onDeleteTruck(tr.id); onLogAction("Removed truck: " + tr.name); };
+  const handleRemoveTruck = (tr) => { onDeleteTruck(tr.id); onLogAction("Removed crew: " + tr.name); };
   const handleClearCompleted = () => { const cleared = []; todaysJobs.forEach((j) => { const u = getLatestUpdate(j.id); if (u && u.status === "completed") { onDeleteJob(j.id); cleared.push(j.address); } }); if (cleared.length > 0) onLogAction("Cleared " + cleared.length + " completed job" + (cleared.length > 1 ? "s" : "") + ": " + cleared.join(", ")); };
   const recentUpdates = [...updates].filter((u) => u.status !== "completed").sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30);
   const sortedLog = [...activityLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -554,7 +554,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
             Tickets
             {openTicketCount > 0 && <span style={{ position: "absolute", top: "-5px", right: "-5px", background: t.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "17px", height: "17px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
           </button>
-          <button style={tabStyle(view === "trucks")} onClick={() => setView("trucks")}>Trucks</button>
+          <button style={tabStyle(view === "trucks")} onClick={() => setView("trucks")}>Crews</button>
           <button style={tabStyle(view === "log")} onClick={() => setView("log")}>Activity Log</button>
         </div>
       </div>
@@ -654,7 +654,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
 
         {view === "tickets" && (
           <>
-            <SectionHeader title="Truck Tickets" right={
+            <SectionHeader title="Equipment Tickets" right={
               <div style={{ display: "flex", gap: "4px" }}>
                 <button onClick={() => setTicketFilter("active")} style={{ padding: "6px 12px", border: "1px solid " + t.border, borderRadius: "6px", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", background: ticketFilter === "active" ? t.accent : "#fff", color: ticketFilter === "active" ? "#fff" : t.textMuted }}>Active ({tickets.filter((tk) => tk.status !== "resolved").length})</button>
                 <button onClick={() => setTicketFilter("all")} style={{ padding: "6px 12px", border: "1px solid " + t.border, borderRadius: "6px", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", background: ticketFilter === "all" ? t.accent : "#fff", color: ticketFilter === "all" ? "#fff" : t.textMuted }}>All ({tickets.length})</button>
@@ -690,8 +690,8 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
 
         {view === "trucks" && (
           <>
-            <SectionHeader title="Trucks / Crews" right={<Button onClick={() => setShowAddTruck(true)}>+ Add Truck</Button>} />
-            {trucks.length === 0 ? <EmptyState text="No trucks yet. Add one to get started." /> : [...trucks].sort(naturalSort).map((tr) => {
+            <SectionHeader title="Crews" right={<Button onClick={() => setShowAddTruck(true)}>+ Add Crew</Button>} />
+            {trucks.length === 0 ? <EmptyState text="No crews yet. Add one to get started." /> : [...trucks].sort(naturalSort).map((tr) => {
               const truckJobs = jobs.filter((j) => j.truckId === tr.id && j.date === todayStr());
               const truckTickets = tickets.filter((tk) => tk.truckId === tr.id && tk.status !== "resolved");
               return (
@@ -744,7 +744,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
           <Input label="Job Address" placeholder="e.g. 1234 E 91st St, Tulsa" value={jobForm.address} onChange={(e) => setJobForm({ ...jobForm, address: e.target.value })} />
           <Input label="Builder / Customer" placeholder="e.g. Smith Residence, ABC Builders" value={jobForm.builder} onChange={(e) => setJobForm({ ...jobForm, builder: e.target.value })} />
           <Select label="Job Type" value={jobForm.type} onChange={(e) => setJobForm({ ...jobForm, type: e.target.value })} options={JOB_TYPES.map((jt) => ({ value: jt, label: jt }))} />
-          <Select label="Assign to Truck" value={jobForm.truckId} onChange={(e) => setJobForm({ ...jobForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...[...trucks].sort(naturalSort).map((tr) => ({ value: tr.id, label: tr.name }))]} />
+          <Select label="Assign to Crew" value={jobForm.truckId} onChange={(e) => setJobForm({ ...jobForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...[...trucks].sort(naturalSort).map((tr) => ({ value: tr.id, label: tr.name }))]} />
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Date</label>
             <input type="date" value={jobForm.date} onChange={(e) => setJobForm({ ...jobForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
@@ -755,10 +755,10 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
       )}
 
       {showAddTruck && (
-        <Modal title="Add Truck" onClose={() => setShowAddTruck(false)}>
-          <Input label="Truck Name" placeholder="e.g. Truck 1, White F-150, Foam Rig" value={truckForm.name} onChange={(e) => setTruckForm({ ...truckForm, name: e.target.value })} />
-          <Input label="Crew Members (optional)" placeholder="e.g. Mike, Carlos, David" value={truckForm.members} onChange={(e) => setTruckForm({ ...truckForm, members: e.target.value })} />
-          <Button onClick={handleAddTruck} disabled={!truckForm.name.trim()} style={{ width: "100%" }}>Add Truck</Button>
+        <Modal title="Add Crew" onClose={() => setShowAddTruck(false)}>
+          <Input label="Crew Name" placeholder="e.g. Alex & Juan, Harold Sr. & Jr." value={truckForm.name} onChange={(e) => setTruckForm({ ...truckForm, name: e.target.value })} />
+          <Input label="Notes (optional)" placeholder="e.g. Fiberglass crew, Foam rig, etc." value={truckForm.members} onChange={(e) => setTruckForm({ ...truckForm, members: e.target.value })} />
+          <Button onClick={handleAddTruck} disabled={!truckForm.name.trim()} style={{ width: "100%" }}>Add Crew</Button>
         </Modal>
       )}
 
@@ -785,7 +785,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
           <Input label="Job Address" value={editForm.address} onChange={(e) => setEditForm({ ...editForm, address: e.target.value })} />
           <Input label="Builder / Customer" value={editForm.builder} onChange={(e) => setEditForm({ ...editForm, builder: e.target.value })} />
           <Select label="Job Type" value={editForm.type} onChange={(e) => setEditForm({ ...editForm, type: e.target.value })} options={JOB_TYPES.map((jt) => ({ value: jt, label: jt }))} />
-          <Select label="Assign to Truck" value={editForm.truckId} onChange={(e) => setEditForm({ ...editForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...[...trucks].sort(naturalSort).map((tr) => ({ value: tr.id, label: tr.name }))]} />
+          <Select label="Assign to Crew" value={editForm.truckId} onChange={(e) => setEditForm({ ...editForm, truckId: e.target.value })} options={[{ value: "", label: "— Unassigned —" }, ...[...trucks].sort(naturalSort).map((tr) => ({ value: tr.id, label: tr.name }))]} />
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Date</label>
             <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />

@@ -396,10 +396,12 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const [ticketFilter, setTicketFilter] = useState("active");
   const [editingJob, setEditingJob] = useState(null);
   const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "" });
+  const [truckFilter, setTruckFilter] = useState(null);
 
-  const todaysJobs = jobs.filter((j) => j.date === selectedDate);
+  const todaysJobs = jobs.filter((j) => j.date === selectedDate && (!truckFilter || j.truckId === truckFilter));
   const openTicketCount = tickets.filter((tk) => tk.status === "open").length;
-  const filteredTickets = ticketFilter === "active" ? tickets.filter((tk) => tk.status !== "resolved") : tickets;
+  const filteredTickets = (ticketFilter === "active" ? tickets.filter((tk) => tk.status !== "resolved") : tickets).filter((tk) => !truckFilter || tk.truckId === truckFilter);
+  const truckFilterName = truckFilter ? trucks.find((tr) => tr.id === truckFilter)?.name : null;
   const sortedTickets = [...filteredTickets].sort((a, b) => {
     const prioOrder = { critical: 0, high: 1, medium: 2, low: 3 };
     if (prioOrder[a.priority] !== prioOrder[b.priority]) return prioOrder[a.priority] - prioOrder[b.priority];
@@ -432,9 +434,9 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px", marginTop: "10px", maxWidth: "900px", margin: "10px auto 0", flexWrap: "wrap" }}>
-          <button style={tabStyle(view === "schedule")} onClick={() => setView("schedule")}>Schedule</button>
-          <button style={tabStyle(view === "feed")} onClick={() => setView("feed")}>Live Feed</button>
-          <button style={tabStyle(view === "tickets")} onClick={() => setView("tickets")}>
+          <button style={tabStyle(view === "schedule")} onClick={() => { setTruckFilter(null); setView("schedule"); }}>Schedule</button>
+          <button style={tabStyle(view === "feed")} onClick={() => { setView("feed"); }}>Live Feed</button>
+          <button style={tabStyle(view === "tickets")} onClick={() => { setTruckFilter(null); setView("tickets"); }}>
             Tickets
             {openTicketCount > 0 && <span style={{ position: "absolute", top: "-5px", right: "-5px", background: t.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "17px", height: "17px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
           </button>
@@ -452,6 +454,12 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
               {hasCompleted && <Button variant="secondary" onClick={handleClearCompleted} style={{ fontSize: "12px", padding: "7px 12px" }}>Clear Done</Button>}
               <Button onClick={() => { setJobForm({ ...jobForm, date: selectedDate }); setShowAddJob(true); }}>+ Add Job</Button>
             </>} />
+            {truckFilterName && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", padding: "8px 12px", background: t.accentBg, borderRadius: "6px", fontSize: "13px", color: t.accent, fontWeight: 500 }}>
+                Showing jobs for {truckFilterName}
+                <button onClick={() => setTruckFilter(null)} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontWeight: 700, fontSize: "14px", fontFamily: "inherit", padding: "0 4px" }}>✕</button>
+              </div>
+            )}
             {todaysJobs.length === 0 ? <EmptyState text={"No jobs scheduled for " + (selectedDate === todayStr() ? "today" : selectedDate) + "."} /> : todaysJobs.map((job) => {
               const truck = trucks.find((tr) => tr.id === job.truckId);
               const latest = getLatestUpdate(job.id);
@@ -538,6 +546,12 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                 <button onClick={() => setTicketFilter("all")} style={{ padding: "6px 12px", border: "1px solid " + t.border, borderRadius: "6px", fontSize: "12px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", background: ticketFilter === "all" ? t.accent : "#fff", color: ticketFilter === "all" ? "#fff" : t.textMuted }}>All ({tickets.length})</button>
               </div>
             } />
+            {truckFilterName && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", padding: "8px 12px", background: t.accentBg, borderRadius: "6px", fontSize: "13px", color: t.accent, fontWeight: 500 }}>
+                Showing tickets for {truckFilterName}
+                <button onClick={() => setTruckFilter(null)} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontWeight: 700, fontSize: "14px", fontFamily: "inherit", padding: "0 4px" }}>✕</button>
+              </div>
+            )}
             {sortedTickets.length === 0 ? <EmptyState text={ticketFilter === "active" ? "No active tickets. All clear." : "No tickets submitted yet."} /> : sortedTickets.map((ticket) => {
               const prioObj = TICKET_PRIORITIES.find((p) => p.value === ticket.priority);
               const statObj = TICKET_STATUSES.find((s) => s.value === ticket.status);
@@ -579,8 +593,8 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                      <Badge>{truckJobs.length} job{truckJobs.length !== 1 ? "s" : ""} today</Badge>
-                      {truckTickets.length > 0 && <Badge color="#b91c1c" bg="#fee2e2">{truckTickets.length} issue{truckTickets.length !== 1 ? "s" : ""}</Badge>}
+                      <span onClick={() => { setTruckFilter(tr.id); setSelectedDate(todayStr()); setView("schedule"); }} style={{ cursor: "pointer" }}><Badge>{truckJobs.length} job{truckJobs.length !== 1 ? "s" : ""} today</Badge></span>
+                      {truckTickets.length > 0 && <span onClick={() => { setTruckFilter(tr.id); setTicketFilter("active"); setView("tickets"); }} style={{ cursor: "pointer" }}><Badge color="#b91c1c" bg="#fee2e2">{truckTickets.length} issue{truckTickets.length !== 1 ? "s" : ""}</Badge></span>}
                       <Button variant="danger" onClick={() => handleRemoveTruck(tr)} style={{ padding: "4px 8px", fontSize: "11px" }}>Remove</Button>
                     </div>
                   </div>

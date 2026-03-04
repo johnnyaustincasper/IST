@@ -7,6 +7,9 @@ import {
   deleteDoc,
   updateDoc,
   onSnapshot,
+  getDocs,
+  query,
+  where,
   serverTimestamp,
 } from "firebase/firestore";
 
@@ -46,6 +49,13 @@ const TICKET_STATUSES = [
 ];
 
 const todayStr = () => new Date().toISOString().split("T")[0];
+
+const OFFICE_PROFILES = [
+  { name: "Johnny", emoji: "👔" },
+  { name: "Jordan", emoji: "📋" },
+  { name: "Skip", emoji: "🔧" },
+  { name: "Duck", emoji: "🦆" },
+];
 const timeStr = () =>
   new Date().toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 const dateStr = (iso) => {
@@ -161,6 +171,29 @@ function RoleSelect({ onSelect }) {
           <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "20px", fontWeight: 600, color: theme.text }}>FIELD CREW</div>
           <div style={{ fontSize: "13px", color: theme.textMuted, marginTop: "6px" }}>View jobs & send updates</div>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+// ─── Admin Login ───
+function AdminLogin({ onLogin, onBack }) {
+  return (
+    <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+      <div style={{ maxWidth: "400px", width: "100%" }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: theme.textMuted, fontSize: "14px", cursor: "pointer", marginBottom: "24px", padding: 0, fontFamily: "inherit" }}>← Back</button>
+        <h1 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "28px", fontWeight: 700, color: theme.text, margin: "0 0 8px" }}>OFFICE LOGIN</h1>
+        <p style={{ color: theme.textMuted, fontSize: "14px", margin: "0 0 28px" }}>Who's logging in?</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {OFFICE_PROFILES.map((p) => (
+            <Card key={p.name} onClick={() => onLogin(p.name)} style={{ padding: "16px 18px", cursor: "pointer" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                <span style={{ fontSize: "28px" }}>{p.emoji}</span>
+                <div style={{ fontWeight: 600, color: theme.text, fontSize: "17px", fontFamily: "'Oswald', sans-serif", letterSpacing: "0.5px" }}>{p.name}</div>
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -370,7 +403,7 @@ function CrewDashboard({ truck, crewName, jobs, updates, tickets, onSubmitUpdate
 }
 
 // ─── Admin Dashboard ───
-function AdminDashboard({ trucks, jobs, updates, tickets, onAddTruck, onDeleteTruck, onAddJob, onDeleteJob, onUpdateTicket, onLogout }) {
+function AdminDashboard({ adminName, trucks, jobs, updates, tickets, onAddTruck, onDeleteTruck, onAddJob, onDeleteJob, onUpdateTicket, onLogout }) {
   const [view, setView] = useState("schedule");
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddTruck, setShowAddTruck] = useState(false);
@@ -408,7 +441,10 @@ function AdminDashboard({ trucks, jobs, updates, tickets, onAddTruck, onDeleteTr
       <div style={{ background: theme.surface, borderBottom: "1px solid " + theme.border, padding: "14px 20px", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", maxWidth: "900px", margin: "0 auto" }}>
           <div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "20px", fontWeight: 700, color: theme.accent }}>IST <span style={{ color: theme.textDim, fontWeight: 400, fontSize: "14px" }}>DISPATCH</span></div>
-          <Button variant="ghost" onClick={onLogout} style={{ fontSize: "12px" }}>← SWITCH ROLE</Button>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "13px", color: theme.textMuted }}>{adminName}</span>
+            <Button variant="ghost" onClick={onLogout} style={{ fontSize: "12px" }}>LOG OUT</Button>
+          </div>
         </div>
         <div style={{ display: "flex", gap: "6px", marginTop: "12px", maxWidth: "900px", margin: "12px auto 0", flexWrap: "wrap" }}>
           <button style={tabStyle(view === "schedule")} onClick={() => setView("schedule")}>Schedule</button>
@@ -427,8 +463,11 @@ function AdminDashboard({ trucks, jobs, updates, tickets, onAddTruck, onDeleteTr
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
               <h2 style={{ fontFamily: "'Oswald', sans-serif", fontSize: "24px", fontWeight: 600, color: theme.text, margin: 0 }}>SCHEDULE</h2>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
                 <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ padding: "8px 12px", background: theme.card, border: "1px solid " + theme.border, borderRadius: "6px", color: theme.text, fontSize: "14px", fontFamily: "inherit", colorScheme: "dark" }} />
+                {todaysJobs.some((j) => { const u = getLatestUpdate(j.id); return u && u.status === "completed"; }) && (
+                  <Button variant="secondary" onClick={() => { todaysJobs.forEach((j) => { const u = getLatestUpdate(j.id); if (u && u.status === "completed") onDeleteJob(j.id); }); }} style={{ fontSize: "12px", padding: "8px 14px" }}>CLEAR DONE</Button>
+                )}
                 <Button onClick={() => { setJobForm({ ...jobForm, date: selectedDate }); setShowAddJob(true); }}>+ ADD JOB</Button>
               </div>
             </div>
@@ -627,6 +666,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState(null);
   const [crewSession, setCrewSession] = useState(null);
+  const [adminName, setAdminName] = useState(null);
   const [trucks, setTrucks] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [updates, setUpdates] = useState([]);
@@ -643,21 +683,27 @@ export default function App() {
   const handleAddTruck = async (data) => { await addDoc(collection(db, "trucks"), data); };
   const handleDeleteTruck = async (id) => { await deleteDoc(doc(db, "trucks", id)); };
   const handleAddJob = async (data) => { await addDoc(collection(db, "jobs"), data); };
-  const handleDeleteJob = async (id) => { await deleteDoc(doc(db, "jobs", id)); };
+  const handleDeleteJob = async (id) => {
+    await deleteDoc(doc(db, "jobs", id));
+    const updatesSnap = await getDocs(query(collection(db, "updates"), where("jobId", "==", id)));
+    updatesSnap.forEach(async (d) => { await deleteDoc(doc(db, "updates", d.id)); });
+  };
   const handleSubmitUpdate = async (data) => { await addDoc(collection(db, "updates"), { ...data, createdAt: serverTimestamp() }); };
   const handleSubmitTicket = async (data) => { await addDoc(collection(db, "tickets"), { ...data, createdAt: serverTimestamp() }); };
   const handleUpdateTicket = async (id, data) => { await updateDoc(doc(db, "tickets", id), data); };
   const handleCrewLogin = (truckId, crewName) => { setCrewSession({ truckId, crewName }); setRole("crew"); };
+  const handleAdminLogin = (name) => { setAdminName(name); setRole("admin"); };
 
   if (loading) return <div style={{ minHeight: "100vh", background: theme.bg, display: "flex", alignItems: "center", justifyContent: "center" }}><div style={{ fontFamily: "'Oswald', sans-serif", fontSize: "28px", color: theme.accent, letterSpacing: "4px" }}>IST</div></div>;
 
   if (!role) return <RoleSelect onSelect={setRole} />;
+  if (role === "admin" && !adminName) return <AdminLogin onLogin={handleAdminLogin} onBack={() => setRole(null)} />;
   if (role === "crew" && !crewSession) return <CrewLogin trucks={trucks} onLogin={handleCrewLogin} onBack={() => setRole(null)} />;
   if (role === "crew" && crewSession) {
     const truck = trucks.find((t) => t.id === crewSession.truckId);
     if (!truck) return <CrewLogin trucks={trucks} onLogin={handleCrewLogin} onBack={() => setRole(null)} />;
     return <CrewDashboard truck={truck} crewName={crewSession.crewName} jobs={jobs} updates={updates} tickets={tickets} onSubmitUpdate={handleSubmitUpdate} onSubmitTicket={handleSubmitTicket} onLogout={() => { setCrewSession(null); setRole(null); }} />;
   }
-  if (role === "admin") return <AdminDashboard trucks={trucks} jobs={jobs} updates={updates} tickets={tickets} onAddTruck={handleAddTruck} onDeleteTruck={handleDeleteTruck} onAddJob={handleAddJob} onDeleteJob={handleDeleteJob} onUpdateTicket={handleUpdateTicket} onLogout={() => setRole(null)} />;
+  if (role === "admin") return <AdminDashboard adminName={adminName} trucks={trucks} jobs={jobs} updates={updates} tickets={tickets} onAddTruck={handleAddTruck} onDeleteTruck={handleDeleteTruck} onAddJob={handleAddJob} onDeleteJob={handleDeleteJob} onUpdateTicket={handleUpdateTicket} onLogout={() => { setAdminName(null); setRole(null); }} />;
   return null;
 }

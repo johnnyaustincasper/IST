@@ -550,7 +550,14 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "" }); };
   const handleSaveEdit = () => { onEditJob(editingJob.id, { ...editForm }); onLogAction("Edited job: " + editForm.address); setEditingJob(null); };
   const handleRemoveJob = (job) => { onDeleteJob(job.id); onLogAction("Removed job: " + job.address + " (" + job.type + ")"); };
-  const handlePmSubmit = () => { if (pmNote.trim()) { onSubmitPmUpdate({ jobId: pmJob.id, user: adminName, note: pmNote, timestamp: new Date().toISOString(), timeStr: timeStr() }); onLogAction("PM update on " + (pmJob.builder || pmJob.address)); } onEditJob(pmJob.id, { jobChecked: pmChecked }); setPmJob(null); setPmNote(""); setPmChecked("No"); };
+  const handlePmSubmit = () => {
+    const jobLabel = pmJob.builder || pmJob.address;
+    if (pmNote.trim()) { onSubmitPmUpdate({ jobId: pmJob.id, user: adminName, note: pmNote, timestamp: new Date().toISOString(), timeStr: timeStr() }); onLogAction("PM note on " + jobLabel + ": \"" + pmNote.trim().slice(0, 80) + (pmNote.trim().length > 80 ? "..." : "") + "\""); }
+    const prevChecked = pmJob.jobChecked || "No";
+    if (pmChecked !== prevChecked) { onEditJob(pmJob.id, { jobChecked: pmChecked }); onLogAction("Marked Job Checked: " + pmChecked + " on " + jobLabel); }
+    else { onEditJob(pmJob.id, { jobChecked: pmChecked }); }
+    setPmJob(null); setPmNote(""); setPmChecked("No");
+  };
   const handleRemoveTruck = (tr) => { onDeleteTruck(tr.id); onLogAction("Removed crew: " + tr.name); };
   const recentUpdates = [...updates].filter((u) => u.status !== "completed").sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30);
   const sortedLog = [...activityLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));

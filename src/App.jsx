@@ -736,8 +736,8 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                               const lat = updates.filter((u) => u.jobId === j.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
                               const isDone = lat && lat.status === "completed";
                               return (
-                                <div key={j.id} style={{ fontSize: "10px", padding: "2px 4px", marginTop: "1px", borderRadius: "3px", background: isDone ? "#f3f4f6" : j.jobCategory === "Retro" ? "#dcfce7" : j.jobCategory === "New Construction" ? "#fee2e2" : "#dbeafe", color: isDone ? "#9ca3af" : j.jobCategory === "Retro" ? "#15803d" : j.jobCategory === "New Construction" ? "#dc2626" : "#1d4ed8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: isDone ? "line-through" : "none", cursor: "pointer" }} title={(j.builder || "No Customer") + " — " + j.address + " — " + j.type + (j.jobCategory ? " — " + j.jobCategory : "")} onClick={() => openEditJob(j)}>
-                                  {j.builder || j.address}
+                                <div key={j.id} style={{ fontSize: "10px", padding: "2px 4px", marginTop: "1px", borderRadius: "3px", background: j.jobCategory === "Retro" ? "#dcfce7" : j.jobCategory === "New Construction" ? "#fee2e2" : "#dbeafe", color: j.jobCategory === "Retro" ? "#15803d" : j.jobCategory === "New Construction" ? "#dc2626" : "#1d4ed8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", cursor: "pointer" }} title={(j.builder || "No Customer") + " — " + j.address + " — " + j.type + (j.jobCategory ? " — " + j.jobCategory : "")} onClick={() => openEditJob(j)}>
+                                  {isDone && "✓ "}{j.builder || j.address}
                                 </div>
                               );
                             })}
@@ -753,7 +753,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dcfce7", display: "inline-block" }}></span> Retro</div>
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#fee2e2", display: "inline-block" }}></span> New Construction</div>
               <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dbeafe", display: "inline-block" }}></span> Uncategorized</div>
-              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#f3f4f6", display: "inline-block" }}></span> Completed</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>✓ = Completed</div>
             </div>
           </>
         )}

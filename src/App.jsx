@@ -559,8 +559,31 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
     setPmJob(null); setPmNote(""); setPmChecked("No");
   };
   const handleRemoveTruck = (tr) => { onDeleteTruck(tr.id); onLogAction("Removed crew: " + tr.name); };
-  const recentUpdates = [...updates].filter((u) => u.status !== "completed").sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30);
   const sortedLog = [...activityLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const calPrev = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); } else { setCalMonth(calMonth - 1); } };
+  const calNext = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1); } else { setCalMonth(calMonth + 1); } };
+  const calDays = () => {
+    const first = new Date(calYear, calMonth, 1);
+    const last = new Date(calYear, calMonth + 1, 0);
+    const startDay = first.getDay();
+    const totalDays = last.getDate();
+    const cells = [];
+    for (let i = 0; i < startDay; i++) cells.push(null);
+    for (let d = 1; d <= totalDays; d++) cells.push(d);
+    return cells;
+  };
+  const calMonthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const getJobsForDate = (day) => {
+    if (!day) return [];
+    const ds = calYear + "-" + String(calMonth + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+    return jobs.filter((j) => j.date === ds);
+  };
+  const todayDay = new Date().getDate();
+  const todayMonth = new Date().getMonth();
+  const todayYear = new Date().getFullYear();
 
   const tabStyle = (active) => ({ padding: "8px 16px", background: active ? t.accent : "transparent", color: active ? "#fff" : t.textMuted, border: active ? "none" : "1px solid " + t.border, borderRadius: "6px", fontSize: "12.5px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", position: "relative" });
 
@@ -576,7 +599,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
         </div>
         <div style={{ display: "flex", gap: "6px", marginTop: "10px", maxWidth: "900px", margin: "10px auto 0", flexWrap: "wrap" }}>
           <button style={tabStyle(view === "schedule")} onClick={() => { setTruckFilter(null); setView("schedule"); }}>Schedule</button>
-          <button style={tabStyle(view === "feed")} onClick={() => { setView("feed"); }}>Live Feed</button>
+          <button style={tabStyle(view === "calendar")} onClick={() => { setView("calendar"); }}>Calendar</button>
           <button style={tabStyle(view === "tickets")} onClick={() => { setTruckFilter(null); setView("tickets"); }}>
             Tickets
             {openTicketCount > 0 && <span style={{ position: "absolute", top: "-5px", right: "-5px", background: t.danger, color: "#fff", fontSize: "10px", fontWeight: 700, borderRadius: "50%", width: "17px", height: "17px", display: "flex", alignItems: "center", justifyContent: "center" }}>{openTicketCount}</span>}
@@ -675,36 +698,61 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
           </>
         )}
 
-        {view === "feed" && (
+        {view === "calendar" && (
           <>
-            <SectionHeader title="Live Feed" />
-            {recentUpdates.length === 0 ? <EmptyState text="No active crew updates." /> : recentUpdates.map((u) => {
-              const job = jobs.find((j) => j.id === u.jobId);
-              const truck = trucks.find((tr) => tr.id === u.truckId);
-              const statusObj = STATUS_OPTIONS.find((s) => s.value === u.status);
-              return (
-                <Card key={u.id}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "6px" }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, color: t.text, fontSize: "14px" }}>{job?.builder || "No Customer"} — {truck?.name || "Unknown"}</div>
-                      <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job?.address || "Unknown"} — {job?.type}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <Badge color={statusObj?.color} bg={statusObj?.bg}>{statusObj?.label}</Badge>
-                      <div style={{ fontSize: "11.5px", color: t.textMuted, marginTop: "3px" }}>{u.timeStr}</div>
-                    </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <button onClick={calPrev} style={{ background: t.surface, border: "1px solid " + t.border, borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: t.text, fontSize: "14px", fontFamily: "inherit" }}>←</button>
+              <div style={{ fontSize: "18px", fontWeight: 600, color: t.text }}>{calMonthNames[calMonth]} {calYear}</div>
+              <button onClick={calNext} style={{ background: t.surface, border: "1px solid " + t.border, borderRadius: "6px", padding: "6px 14px", cursor: "pointer", color: t.text, fontSize: "14px", fontFamily: "inherit" }}>→</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "1px", background: t.border, border: "1px solid " + t.border, borderRadius: "8px", overflow: "hidden" }}>
+              {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
+                <div key={d} style={{ background: t.surface, padding: "8px 4px", textAlign: "center", fontSize: "11px", fontWeight: 600, color: t.textMuted, textTransform: "uppercase", letterSpacing: "0.5px" }}>{d}</div>
+              ))}
+              {calDays().map((day, i) => {
+                const dayJobs = getJobsForDate(day);
+                const isToday = day === todayDay && calMonth === todayMonth && calYear === todayYear;
+                const grouped = {};
+                dayJobs.forEach((j) => {
+                  const crew = trucks.find((tr) => tr.id === j.truckId);
+                  const key = crew ? crew.id : "_unassigned";
+                  if (!grouped[key]) grouped[key] = { name: crew ? crew.name : "Unassigned", jobs: [] };
+                  grouped[key].jobs.push(j);
+                });
+                const crewKeys = Object.keys(grouped).sort((a, b) => {
+                  if (a === "_unassigned") return 1;
+                  if (b === "_unassigned") return -1;
+                  return (grouped[a].name).localeCompare(grouped[b].name);
+                });
+                return (
+                  <div key={i} style={{ background: day ? (isToday ? t.accentBg : "#fff") : t.bg, padding: "4px", minHeight: "90px", verticalAlign: "top" }}>
+                    {day && (
+                      <>
+                        <div style={{ fontSize: "12px", fontWeight: isToday ? 700 : 400, color: isToday ? t.accent : t.textMuted, marginBottom: "3px", textAlign: "right", paddingRight: "4px" }}>{day}</div>
+                        {crewKeys.map((key) => (
+                          <div key={key} style={{ marginBottom: "3px" }}>
+                            <div style={{ fontSize: "9px", fontWeight: 700, color: t.accent, textTransform: "uppercase", letterSpacing: "0.3px", padding: "0 2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{grouped[key].name}</div>
+                            {grouped[key].jobs.map((j) => {
+                              const lat = updates.filter((u) => u.jobId === j.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+                              const isDone = lat && lat.status === "completed";
+                              return (
+                                <div key={j.id} style={{ fontSize: "10px", padding: "2px 4px", marginTop: "1px", borderRadius: "3px", background: isDone ? "#dcfce7" : "#dbeafe", color: isDone ? "#15803d" : "#1d4ed8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: isDone ? "line-through" : "none", cursor: "pointer" }} title={(j.builder || "No Customer") + " — " + j.address + " — " + j.type} onClick={() => openEditJob(j)}>
+                                  {j.builder || j.address}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </div>
-                  {u.eta && <div style={{ fontSize: "12.5px", color: t.textSecondary, marginTop: "6px" }}>ETA: {u.eta}</div>}
-                  {u.notes && <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "4px" }}>{u.notes}</div>}
-                  {job && (
-                    <div style={{ display: "flex", gap: "6px", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid " + t.borderLight }}>
-                      <Button variant="secondary" onClick={() => openEditJob(job)} style={{ fontSize: "12px", padding: "5px 12px" }}>Edit Job</Button>
-                      <Button variant="danger" onClick={() => handleRemoveJob(job)} style={{ fontSize: "12px", padding: "5px 12px" }}>Remove Job</Button>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", gap: "12px", marginTop: "12px", fontSize: "11px", color: t.textMuted }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dbeafe", display: "inline-block" }}></span> Active</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dcfce7", display: "inline-block" }}></span> Completed</div>
+            </div>
           </>
         )}
 

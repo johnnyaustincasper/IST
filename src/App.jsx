@@ -502,7 +502,6 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const [view, setView] = useState("schedule");
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddTruck, setShowAddTruck] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(todayStr());
   const [jobForm, setJobForm] = useState({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" });
   const [truckForm, setTruckForm] = useState({ name: "", members: "" });
   const [activeTicket, setActiveTicket] = useState(null);
@@ -513,7 +512,11 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "" });
   const [truckFilter, setTruckFilter] = useState(null);
 
-  const todaysJobs = jobs.filter((j) => j.date === selectedDate && (!truckFilter || j.truckId === truckFilter));
+  const activeJobs = jobs.filter((j) => {
+    const latest = updates.filter((u) => u.jobId === j.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+    const isCompleted = latest && latest.status === "completed";
+    return !isCompleted && (!truckFilter || j.truckId === truckFilter);
+  });
   const openTicketCount = tickets.filter((tk) => tk.status === "open").length;
   const filteredTickets = (ticketFilter === "active" ? tickets.filter((tk) => tk.status !== "resolved") : tickets).filter((tk) => !truckFilter || tk.truckId === truckFilter);
   const truckFilterName = truckFilter ? trucks.find((tr) => tr.id === truckFilter)?.name : null;
@@ -526,7 +529,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const sortedTrucks = [...trucks].sort(orderSort);
 
   const getLatestUpdate = (jobId) => { const u = updates.filter((u) => u.jobId === jobId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); return u.length > 0 ? u[0] : null; };
-  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: selectedDate, notes: "" }); setShowAddJob(false); };
+  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" }); setShowAddJob(false); };
   const handleAddTruck = () => { const maxOrder = trucks.reduce((m, tr) => Math.max(m, tr.order ?? 0), 0); onAddTruck({ ...truckForm, order: maxOrder + 1 }); onLogAction("Added crew: " + truckForm.name); setTruckForm({ name: "", members: "" }); setShowAddTruck(false); };
   const handleMoveTruck = (truckId, direction) => {
     const idx = sortedTrucks.findIndex((tr) => tr.id === truckId);
@@ -542,13 +545,10 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const handleSaveEdit = () => { onEditJob(editingJob.id, { ...editForm }); onLogAction("Edited job: " + editForm.address); setEditingJob(null); };
   const handleRemoveJob = (job) => { onDeleteJob(job.id); onLogAction("Removed job: " + job.address + " (" + job.type + ")"); };
   const handleRemoveTruck = (tr) => { onDeleteTruck(tr.id); onLogAction("Removed crew: " + tr.name); };
-  const handleClearCompleted = () => { const cleared = []; todaysJobs.forEach((j) => { const u = getLatestUpdate(j.id); if (u && u.status === "completed") { onDeleteJob(j.id); cleared.push(j.address); } }); if (cleared.length > 0) onLogAction("Cleared " + cleared.length + " completed job" + (cleared.length > 1 ? "s" : "") + ": " + cleared.join(", ")); };
   const recentUpdates = [...updates].filter((u) => u.status !== "completed").sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30);
   const sortedLog = [...activityLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   const tabStyle = (active) => ({ padding: "8px 16px", background: active ? t.accent : "transparent", color: active ? "#fff" : t.textMuted, border: active ? "none" : "1px solid " + t.border, borderRadius: "6px", fontSize: "12.5px", fontWeight: 500, cursor: "pointer", fontFamily: "inherit", position: "relative" });
-
-  const hasCompleted = todaysJobs.some((j) => { const u = getLatestUpdate(j.id); return u && u.status === "completed"; });
 
   return (
     <div style={{ minHeight: "100vh", background: t.bg }}>
@@ -577,9 +577,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
         {view === "schedule" && (
           <>
             <SectionHeader title="Schedule" right={<>
-              <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} style={{ padding: "7px 10px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "13px", fontFamily: "inherit" }} />
-              {hasCompleted && <Button variant="secondary" onClick={handleClearCompleted} style={{ fontSize: "12px", padding: "7px 12px" }}>Clear Done</Button>}
-              <Button onClick={() => { setJobForm({ ...jobForm, date: selectedDate }); setShowAddJob(true); }}>+ Add Job</Button>
+              <Button onClick={() => { setJobForm({ ...jobForm, date: todayStr() }); setShowAddJob(true); }}>+ Add Job</Button>
             </>} />
             {truckFilterName && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", padding: "8px 12px", background: t.accentBg, borderRadius: "6px", fontSize: "13px", color: t.accent, fontWeight: 500 }}>
@@ -587,9 +585,9 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                 <button onClick={() => setTruckFilter(null)} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontWeight: 700, fontSize: "14px", fontFamily: "inherit", padding: "0 4px" }}>✕</button>
               </div>
             )}
-            {todaysJobs.length === 0 ? <EmptyState text={"No jobs scheduled for " + (selectedDate === todayStr() ? "today" : selectedDate) + "."} /> : (() => {
-              const unassigned = todaysJobs.filter((j) => !j.truckId);
-              const crewGroups = sortedTrucks.filter((tr) => !truckFilter || tr.id === truckFilter).map((tr) => ({ crew: tr, jobs: todaysJobs.filter((j) => j.truckId === tr.id) })).filter((g) => g.jobs.length > 0);
+            {activeJobs.length === 0 ? <EmptyState text="No active jobs." /> : (() => {
+              const unassigned = activeJobs.filter((j) => !j.truckId);
+              const crewGroups = sortedTrucks.filter((tr) => !truckFilter || tr.id === truckFilter).map((tr) => ({ crew: tr, jobs: activeJobs.filter((j) => j.truckId === tr.id) })).filter((g) => g.jobs.length > 0);
               if (unassigned.length > 0) crewGroups.push({ crew: { id: "_unassigned", name: "Unassigned" }, jobs: unassigned });
               return crewGroups.map((group) => (
                 <div key={group.crew.id} style={{ marginBottom: "20px" }}>
@@ -608,7 +606,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, color: t.text, fontSize: "15px" }}>{job.builder || "No Customer Listed"}</div>
                             <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.address}</div>
-                            <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.type}</div>
+                            <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.type} — {new Date(job.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
                           </div>
                           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                             <Badge color={statusObj.color} bg={statusObj.bg}>{statusObj.label}</Badge>
@@ -718,7 +716,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
           <>
             <SectionHeader title="Crews" right={<Button onClick={() => setShowAddTruck(true)}>+ Add Crew</Button>} />
             {trucks.length === 0 ? <EmptyState text="No crews yet. Add one to get started." /> : sortedTrucks.map((tr, idx) => {
-              const truckJobs = jobs.filter((j) => j.truckId === tr.id && j.date === todayStr());
+              const truckJobs = jobs.filter((j) => { if (j.truckId !== tr.id) return false; const lat = updates.filter((u) => u.jobId === j.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0]; return !lat || lat.status !== "completed"; });
               const truckTickets = tickets.filter((tk) => tk.truckId === tr.id && tk.status !== "resolved");
               return (
                 <Card key={tr.id}>
@@ -741,7 +739,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                      <span onClick={() => { setTruckFilter(tr.id); setSelectedDate(todayStr()); setView("schedule"); }} style={{ cursor: "pointer" }}><Badge>{truckJobs.length} job{truckJobs.length !== 1 ? "s" : ""} today</Badge></span>
+                      <span onClick={() => { setTruckFilter(tr.id); setView("schedule"); }} style={{ cursor: "pointer" }}><Badge>{truckJobs.length} active job{truckJobs.length !== 1 ? "s" : ""}</Badge></span>
                       {truckTickets.length > 0 && <span onClick={() => { setTruckFilter(tr.id); setTicketFilter("active"); setView("tickets"); }} style={{ cursor: "pointer" }}><Badge color="#b91c1c" bg="#fee2e2">{truckTickets.length} issue{truckTickets.length !== 1 ? "s" : ""}</Badge></span>}
                       <Button variant="danger" onClick={() => handleRemoveTruck(tr)} style={{ padding: "4px 8px", fontSize: "11px" }}>Remove</Button>
                     </div>

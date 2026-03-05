@@ -796,25 +796,49 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                 <button onClick={() => setTruckFilter(null)} style={{ background: "none", border: "none", color: t.accent, cursor: "pointer", fontWeight: 700, fontSize: "14px", fontFamily: "inherit", padding: "0 4px" }}>✕</button>
               </div>
             )}
-            {sortedTickets.length === 0 ? <EmptyState text={ticketFilter === "active" ? "No active tickets. All clear." : "No tickets submitted yet."} /> : sortedTickets.map((ticket) => {
-              const prioObj = TICKET_PRIORITIES.find((p) => p.value === ticket.priority);
-              const statObj = TICKET_STATUSES.find((s) => s.value === ticket.status);
-              return (
-                <Card key={ticket.id} onClick={() => { setActiveTicket(ticket); setTicketStatus(ticket.status === "open" ? "acknowledged" : ticket.status); setTicketNote(ticket.adminNote || ""); }} style={{ cursor: "pointer" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
-                      <Badge color={prioObj?.color} bg={prioObj?.bg}>{prioObj?.label?.split("—")[0]?.trim()}</Badge>
-                      <Badge color={statObj?.color} bg={statObj?.bg}>{statObj?.label}</Badge>
-                      <span style={{ fontSize: "13px", fontWeight: 500, color: t.text }}>{ticket.truckName}</span>
+            {sortedTickets.length === 0 ? <EmptyState text={ticketFilter === "active" ? "No active tickets. All clear." : "No tickets submitted yet."} /> : (() => {
+              const ticketGroups = {};
+              sortedTickets.forEach((tk) => {
+                const key = tk.truckId || "_unknown";
+                if (!ticketGroups[key]) {
+                  const crew = trucks.find((tr) => tr.id === tk.truckId);
+                  ticketGroups[key] = { name: crew ? crew.name : tk.truckName || "Unknown Crew", members: crew?.members, order: crew?.order ?? 999, tickets: [] };
+                }
+                ticketGroups[key].tickets.push(tk);
+              });
+              const groupKeys = Object.keys(ticketGroups).sort((a, b) => ticketGroups[a].order - ticketGroups[b].order);
+              return groupKeys.map((key) => {
+                const group = ticketGroups[key];
+                const activeCount = group.tickets.filter((tk) => tk.status !== "resolved").length;
+                return (
+                  <div key={key} style={{ marginBottom: "20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", paddingBottom: "6px", borderBottom: "2px solid " + t.accent }}>
+                      <div style={{ fontSize: "15px", fontWeight: 600, color: t.text }}>{group.name}</div>
+                      {group.members && <span style={{ fontSize: "12px", color: t.textMuted }}>— {group.members}</span>}
+                      {activeCount > 0 && <Badge color="#b91c1c" bg="#fee2e2">{activeCount} active</Badge>}
                     </div>
-                    <span style={{ fontSize: "11.5px", color: t.textMuted }}>{dateStr(ticket.timestamp)}</span>
+                    {group.tickets.map((ticket) => {
+                      const prioObj = TICKET_PRIORITIES.find((p) => p.value === ticket.priority);
+                      const statObj = TICKET_STATUSES.find((s) => s.value === ticket.status);
+                      return (
+                        <Card key={ticket.id} onClick={() => { setActiveTicket(ticket); setTicketStatus(ticket.status === "open" ? "acknowledged" : ticket.status); setTicketNote(ticket.adminNote || ""); }} style={{ cursor: "pointer", marginLeft: "8px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", gap: "5px", alignItems: "center", flexWrap: "wrap" }}>
+                              <Badge color={prioObj?.color} bg={prioObj?.bg}>{prioObj?.label?.split("—")[0]?.trim()}</Badge>
+                              <Badge color={statObj?.color} bg={statObj?.bg}>{statObj?.label}</Badge>
+                            </div>
+                            <span style={{ fontSize: "11.5px", color: t.textMuted }}>{dateStr(ticket.timestamp)}</span>
+                          </div>
+                          <div style={{ fontSize: "14px", color: t.text, lineHeight: 1.5 }}>{ticket.description}</div>
+                          <div style={{ fontSize: "12px", color: t.textMuted, marginTop: "6px" }}>Submitted by {ticket.submittedBy}</div>
+                          {ticket.adminNote && <div style={{ fontSize: "13px", color: t.textSecondary, background: t.bg, padding: "10px 12px", borderRadius: "6px", marginTop: "8px", borderLeft: "3px solid #15803d" }}>Response: {ticket.adminNote}</div>}
+                        </Card>
+                      );
+                    })}
                   </div>
-                  <div style={{ fontSize: "14px", color: t.text, lineHeight: 1.5 }}>{ticket.description}</div>
-                  <div style={{ fontSize: "12px", color: t.textMuted, marginTop: "6px" }}>Submitted by {ticket.submittedBy}</div>
-                  {ticket.adminNote && <div style={{ fontSize: "13px", color: t.textSecondary, background: t.bg, padding: "10px 12px", borderRadius: "6px", marginTop: "8px", borderLeft: "3px solid #15803d" }}>Response: {ticket.adminNote}</div>}
-                </Card>
-              );
-            })}
+                );
+              });
+            })()}
           </>
         )}
 

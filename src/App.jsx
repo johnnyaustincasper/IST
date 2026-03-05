@@ -505,14 +505,14 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const [view, setView] = useState("schedule");
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddTruck, setShowAddTruck] = useState(false);
-  const [jobForm, setJobForm] = useState({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" });
+  const [jobForm, setJobForm] = useState({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "", jobCategory: "" });
   const [truckForm, setTruckForm] = useState({ name: "", members: "" });
   const [activeTicket, setActiveTicket] = useState(null);
   const [ticketStatus, setTicketStatus] = useState("acknowledged");
   const [ticketNote, setTicketNote] = useState("");
   const [ticketFilter, setTicketFilter] = useState("active");
   const [editingJob, setEditingJob] = useState(null);
-  const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "" });
+  const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "", jobCategory: "" });
   const [truckFilter, setTruckFilter] = useState(null);
   const [pmJob, setPmJob] = useState(null);
   const [pmNote, setPmNote] = useState("");
@@ -535,7 +535,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const sortedTrucks = [...trucks].sort(orderSort);
 
   const getLatestUpdate = (jobId) => { const u = updates.filter((u) => u.jobId === jobId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); return u.length > 0 ? u[0] : null; };
-  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" }); setShowAddJob(false); };
+  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "", jobCategory: "" }); setShowAddJob(false); };
   const handleAddTruck = () => { const maxOrder = trucks.reduce((m, tr) => Math.max(m, tr.order ?? 0), 0); onAddTruck({ ...truckForm, order: maxOrder + 1 }); onLogAction("Added crew: " + truckForm.name); setTruckForm({ name: "", members: "" }); setShowAddTruck(false); };
   const handleMoveTruck = (truckId, direction) => {
     const idx = sortedTrucks.findIndex((tr) => tr.id === truckId);
@@ -547,7 +547,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
     onReorderTruck(b.id, a.order ?? idx);
   };
   const handleTicketUpdate = () => { onUpdateTicket(activeTicket.id, { status: ticketStatus, adminNote: ticketNote }); onLogAction("Updated ticket for " + activeTicket.truckName + " to " + ticketStatus); setActiveTicket(null); setTicketStatus("acknowledged"); setTicketNote(""); };
-  const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "" }); };
+  const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "", jobCategory: job.jobCategory || "" }); };
   const handleSaveEdit = () => { onEditJob(editingJob.id, { ...editForm }); onLogAction("Edited job: " + editForm.address); setEditingJob(null); };
   const handleRemoveJob = (job) => { onDeleteJob(job.id); onLogAction("Removed job: " + job.address + " (" + job.type + ")"); };
   const handlePmSubmit = () => {
@@ -644,7 +644,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, color: t.text, fontSize: "15px" }}>{job.builder || "No Customer Listed"}</div>
                             <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.address}</div>
-                            <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.type} — {new Date(job.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                            <div style={{ fontSize: "12.5px", color: t.textMuted, marginTop: "2px" }}>{job.type} — {new Date(job.date + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}{job.jobCategory && <span style={{ marginLeft: "8px", fontWeight: 600, color: job.jobCategory === "Retro" ? "#15803d" : "#dc2626" }}>{job.jobCategory}</span>}</div>
                           </div>
                           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                             <Badge color={statusObj.color} bg={statusObj.bg}>{statusObj.label}</Badge>
@@ -736,7 +736,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                               const lat = updates.filter((u) => u.jobId === j.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
                               const isDone = lat && lat.status === "completed";
                               return (
-                                <div key={j.id} style={{ fontSize: "10px", padding: "2px 4px", marginTop: "1px", borderRadius: "3px", background: isDone ? "#dcfce7" : "#dbeafe", color: isDone ? "#15803d" : "#1d4ed8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: isDone ? "line-through" : "none", cursor: "pointer" }} title={(j.builder || "No Customer") + " — " + j.address + " — " + j.type} onClick={() => openEditJob(j)}>
+                                <div key={j.id} style={{ fontSize: "10px", padding: "2px 4px", marginTop: "1px", borderRadius: "3px", background: isDone ? "#f3f4f6" : j.jobCategory === "Retro" ? "#dcfce7" : j.jobCategory === "New Construction" ? "#fee2e2" : "#dbeafe", color: isDone ? "#9ca3af" : j.jobCategory === "Retro" ? "#15803d" : j.jobCategory === "New Construction" ? "#dc2626" : "#1d4ed8", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textDecoration: isDone ? "line-through" : "none", cursor: "pointer" }} title={(j.builder || "No Customer") + " — " + j.address + " — " + j.type + (j.jobCategory ? " — " + j.jobCategory : "")} onClick={() => openEditJob(j)}>
                                   {j.builder || j.address}
                                 </div>
                               );
@@ -749,9 +749,11 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                 );
               })}
             </div>
-            <div style={{ display: "flex", gap: "12px", marginTop: "12px", fontSize: "11px", color: t.textMuted }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dbeafe", display: "inline-block" }}></span> Active</div>
-              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dcfce7", display: "inline-block" }}></span> Completed</div>
+            <div style={{ display: "flex", gap: "12px", marginTop: "12px", fontSize: "11px", color: t.textMuted, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dcfce7", display: "inline-block" }}></span> Retro</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#fee2e2", display: "inline-block" }}></span> New Construction</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#dbeafe", display: "inline-block" }}></span> Uncategorized</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#f3f4f6", display: "inline-block" }}></span> Completed</div>
             </div>
           </>
         )}
@@ -862,6 +864,19 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
             <input type="date" value={jobForm.date} onChange={(e) => setJobForm({ ...jobForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           <TextArea label="Office Notes (visible to crew)" placeholder="Special instructions, materials needed..." value={jobForm.notes} onChange={(e) => setJobForm({ ...jobForm, notes: e.target.value })} />
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "8px" }}>Job Category</label>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "14px", color: t.text }}>
+                <input type="checkbox" checked={jobForm.jobCategory === "Retro"} onChange={() => setJobForm({ ...jobForm, jobCategory: jobForm.jobCategory === "Retro" ? "" : "Retro" })} style={{ width: "18px", height: "18px", accentColor: "#15803d", cursor: "pointer" }} />
+                Retro
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "14px", color: t.text }}>
+                <input type="checkbox" checked={jobForm.jobCategory === "New Construction"} onChange={() => setJobForm({ ...jobForm, jobCategory: jobForm.jobCategory === "New Construction" ? "" : "New Construction" })} style={{ width: "18px", height: "18px", accentColor: "#dc2626", cursor: "pointer" }} />
+                New Construction
+              </label>
+            </div>
+          </div>
           <Button onClick={handleAddJob} disabled={!jobForm.address.trim()} style={{ width: "100%" }}>Add Job to Schedule</Button>
         </Modal>
       )}
@@ -903,6 +918,19 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
             <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           <TextArea label="Office Notes (visible to crew)" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
+          <div style={{ marginBottom: "16px" }}>
+            <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "8px" }}>Job Category</label>
+            <div style={{ display: "flex", gap: "16px" }}>
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "14px", color: t.text }}>
+                <input type="checkbox" checked={editForm.jobCategory === "Retro"} onChange={() => setEditForm({ ...editForm, jobCategory: editForm.jobCategory === "Retro" ? "" : "Retro" })} style={{ width: "18px", height: "18px", accentColor: "#15803d", cursor: "pointer" }} />
+                Retro
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "14px", color: t.text }}>
+                <input type="checkbox" checked={editForm.jobCategory === "New Construction"} onChange={() => setEditForm({ ...editForm, jobCategory: editForm.jobCategory === "New Construction" ? "" : "New Construction" })} style={{ width: "18px", height: "18px", accentColor: "#dc2626", cursor: "pointer" }} />
+                New Construction
+              </label>
+            </div>
+          </div>
           <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
             <Button variant="secondary" onClick={() => setEditingJob(null)} style={{ flex: 1 }}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={!editForm.address.trim()} style={{ flex: 1 }}>Save Changes</Button>

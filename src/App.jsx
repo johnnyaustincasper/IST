@@ -505,14 +505,14 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const [view, setView] = useState("schedule");
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddTruck, setShowAddTruck] = useState(false);
-  const [jobForm, setJobForm] = useState({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" });
+  const [jobForm, setJobForm] = useState({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "", jobChecked: "No" });
   const [truckForm, setTruckForm] = useState({ name: "", members: "" });
   const [activeTicket, setActiveTicket] = useState(null);
   const [ticketStatus, setTicketStatus] = useState("acknowledged");
   const [ticketNote, setTicketNote] = useState("");
   const [ticketFilter, setTicketFilter] = useState("active");
   const [editingJob, setEditingJob] = useState(null);
-  const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "" });
+  const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "", jobChecked: "No" });
   const [truckFilter, setTruckFilter] = useState(null);
   const [pmJob, setPmJob] = useState(null);
   const [pmNote, setPmNote] = useState("");
@@ -534,7 +534,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const sortedTrucks = [...trucks].sort(orderSort);
 
   const getLatestUpdate = (jobId) => { const u = updates.filter((u) => u.jobId === jobId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); return u.length > 0 ? u[0] : null; };
-  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" }); setShowAddJob(false); };
+  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "", jobChecked: "No" }); setShowAddJob(false); };
   const handleAddTruck = () => { const maxOrder = trucks.reduce((m, tr) => Math.max(m, tr.order ?? 0), 0); onAddTruck({ ...truckForm, order: maxOrder + 1 }); onLogAction("Added crew: " + truckForm.name); setTruckForm({ name: "", members: "" }); setShowAddTruck(false); };
   const handleMoveTruck = (truckId, direction) => {
     const idx = sortedTrucks.findIndex((tr) => tr.id === truckId);
@@ -546,7 +546,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
     onReorderTruck(b.id, a.order ?? idx);
   };
   const handleTicketUpdate = () => { onUpdateTicket(activeTicket.id, { status: ticketStatus, adminNote: ticketNote }); onLogAction("Updated ticket for " + activeTicket.truckName + " to " + ticketStatus); setActiveTicket(null); setTicketStatus("acknowledged"); setTicketNote(""); };
-  const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "" }); };
+  const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "", jobChecked: job.jobChecked || "No" }); };
   const handleSaveEdit = () => { onEditJob(editingJob.id, { ...editForm }); onLogAction("Edited job: " + editForm.address); setEditingJob(null); };
   const handleRemoveJob = (job) => { onDeleteJob(job.id); onLogAction("Removed job: " + job.address + " (" + job.type + ")"); };
   const handlePmSubmit = () => { onSubmitPmUpdate({ jobId: pmJob.id, user: adminName, note: pmNote, timestamp: new Date().toISOString(), timeStr: timeStr() }); onLogAction("PM update on " + (pmJob.builder || pmJob.address)); setPmJob(null); setPmNote(""); };
@@ -652,6 +652,10 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                                 <div style={{ marginTop: "3px", color: t.text, paddingLeft: "2px" }}>{p.note}</div>
                               </div>
                             ))}
+                            <div style={{ marginTop: "10px", fontSize: "12.5px", display: "flex", alignItems: "center", gap: "6px" }}>
+                              <span style={{ fontWeight: 600, color: "#dc2626" }}>Job Checked?</span>
+                              <span style={{ fontWeight: 600, color: job.jobChecked === "Yes" ? "#15803d" : t.textMuted }}>{job.jobChecked || "No"}</span>
+                            </div>
                           </div>
                         </div>
                       </Card>
@@ -843,6 +847,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
             <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           <TextArea label="Office Notes (visible to crew)" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
+          <Select label="Job Checked?" value={editForm.jobChecked} onChange={(e) => setEditForm({ ...editForm, jobChecked: e.target.value })} options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]} />
           <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
             <Button variant="secondary" onClick={() => setEditingJob(null)} style={{ flex: 1 }}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={!editForm.address.trim()} style={{ flex: 1 }}>Save Changes</Button>

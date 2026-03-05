@@ -505,17 +505,18 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const [view, setView] = useState("schedule");
   const [showAddJob, setShowAddJob] = useState(false);
   const [showAddTruck, setShowAddTruck] = useState(false);
-  const [jobForm, setJobForm] = useState({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "", jobChecked: "No" });
+  const [jobForm, setJobForm] = useState({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" });
   const [truckForm, setTruckForm] = useState({ name: "", members: "" });
   const [activeTicket, setActiveTicket] = useState(null);
   const [ticketStatus, setTicketStatus] = useState("acknowledged");
   const [ticketNote, setTicketNote] = useState("");
   const [ticketFilter, setTicketFilter] = useState("active");
   const [editingJob, setEditingJob] = useState(null);
-  const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "", jobChecked: "No" });
+  const [editForm, setEditForm] = useState({ address: "", builder: "", type: "", truckId: "", date: "", notes: "" });
   const [truckFilter, setTruckFilter] = useState(null);
   const [pmJob, setPmJob] = useState(null);
   const [pmNote, setPmNote] = useState("");
+  const [pmChecked, setPmChecked] = useState("No");
 
   const activeJobs = jobs.filter((j) => {
     const latest = updates.filter((u) => u.jobId === j.id).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
@@ -534,7 +535,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
   const sortedTrucks = [...trucks].sort(orderSort);
 
   const getLatestUpdate = (jobId) => { const u = updates.filter((u) => u.jobId === jobId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); return u.length > 0 ? u[0] : null; };
-  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "", jobChecked: "No" }); setShowAddJob(false); };
+  const handleAddJob = () => { onAddJob({ ...jobForm }); onLogAction("Added job: " + jobForm.address + " (" + jobForm.type + ")"); setJobForm({ address: "", builder: "", type: JOB_TYPES[0], truckId: "", date: todayStr(), notes: "" }); setShowAddJob(false); };
   const handleAddTruck = () => { const maxOrder = trucks.reduce((m, tr) => Math.max(m, tr.order ?? 0), 0); onAddTruck({ ...truckForm, order: maxOrder + 1 }); onLogAction("Added crew: " + truckForm.name); setTruckForm({ name: "", members: "" }); setShowAddTruck(false); };
   const handleMoveTruck = (truckId, direction) => {
     const idx = sortedTrucks.findIndex((tr) => tr.id === truckId);
@@ -546,10 +547,10 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
     onReorderTruck(b.id, a.order ?? idx);
   };
   const handleTicketUpdate = () => { onUpdateTicket(activeTicket.id, { status: ticketStatus, adminNote: ticketNote }); onLogAction("Updated ticket for " + activeTicket.truckName + " to " + ticketStatus); setActiveTicket(null); setTicketStatus("acknowledged"); setTicketNote(""); };
-  const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "", jobChecked: job.jobChecked || "No" }); };
+  const openEditJob = (job) => { setEditingJob(job); setEditForm({ address: job.address, builder: job.builder || "", type: job.type, truckId: job.truckId || "", date: job.date, notes: job.notes || "" }); };
   const handleSaveEdit = () => { onEditJob(editingJob.id, { ...editForm }); onLogAction("Edited job: " + editForm.address); setEditingJob(null); };
   const handleRemoveJob = (job) => { onDeleteJob(job.id); onLogAction("Removed job: " + job.address + " (" + job.type + ")"); };
-  const handlePmSubmit = () => { onSubmitPmUpdate({ jobId: pmJob.id, user: adminName, note: pmNote, timestamp: new Date().toISOString(), timeStr: timeStr() }); onLogAction("PM update on " + (pmJob.builder || pmJob.address)); setPmJob(null); setPmNote(""); };
+  const handlePmSubmit = () => { if (pmNote.trim()) { onSubmitPmUpdate({ jobId: pmJob.id, user: adminName, note: pmNote, timestamp: new Date().toISOString(), timeStr: timeStr() }); onLogAction("PM update on " + (pmJob.builder || pmJob.address)); } onEditJob(pmJob.id, { jobChecked: pmChecked }); setPmJob(null); setPmNote(""); setPmChecked("No"); };
   const handleRemoveTruck = (tr) => { onDeleteTruck(tr.id); onLogAction("Removed crew: " + tr.name); };
   const recentUpdates = [...updates].filter((u) => u.status !== "completed").sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 30);
   const sortedLog = [...activityLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -617,7 +618,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                           </div>
                           <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                             <Badge color={statusObj.color} bg={statusObj.bg}>{statusObj.label}</Badge>
-                            <Button variant="secondary" onClick={() => setPmJob(job)} style={{ padding: "4px 8px", fontSize: "11px" }}>PM Note</Button>
+                            <Button variant="secondary" onClick={() => { setPmJob(job); setPmChecked(job.jobChecked || "No"); }} style={{ padding: "4px 8px", fontSize: "11px" }}>PM Note</Button>
                             <Button variant="secondary" onClick={() => openEditJob(job)} style={{ padding: "4px 8px", fontSize: "11px" }}>Edit</Button>
                             <Button variant="danger" onClick={() => handleRemoveJob(job)} style={{ padding: "4px 8px", fontSize: "11px" }}>Remove</Button>
                           </div>
@@ -847,7 +848,6 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
             <input type="date" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} style={{ width: "100%", padding: "9px 12px", background: "#fff", border: "1px solid " + t.border, borderRadius: "6px", color: t.text, fontSize: "14px", fontFamily: "inherit", boxSizing: "border-box" }} />
           </div>
           <TextArea label="Office Notes (visible to crew)" value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} />
-          <Select label="Job Checked?" value={editForm.jobChecked} onChange={(e) => setEditForm({ ...editForm, jobChecked: e.target.value })} options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]} />
           <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
             <Button variant="secondary" onClick={() => setEditingJob(null)} style={{ flex: 1 }}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={!editForm.address.trim()} style={{ flex: 1 }}>Save Changes</Button>
@@ -856,12 +856,13 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
       )}
 
       {pmJob && (
-        <Modal title="Project Manager Update" onClose={() => { setPmJob(null); setPmNote(""); }}>
+        <Modal title="Project Manager Update" onClose={() => { setPmJob(null); setPmNote(""); setPmChecked("No"); }}>
           <div style={{ fontSize: "13.5px", color: t.textMuted, marginBottom: "18px" }}><strong style={{ color: t.text }}>{pmJob.builder || "No Customer"}</strong><br />{pmJob.address} — {pmJob.type}</div>
           <TextArea label="Your update" placeholder="Add notes, instructions, status info for this job..." value={pmNote} onChange={(e) => setPmNote(e.target.value)} style={{ minHeight: "100px" }} />
+          <Select label="Job Checked?" value={pmChecked} onChange={(e) => setPmChecked(e.target.value)} options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]} />
           <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
-            <Button variant="secondary" onClick={() => { setPmJob(null); setPmNote(""); }} style={{ flex: 1 }}>Cancel</Button>
-            <Button onClick={handlePmSubmit} disabled={!pmNote.trim()} style={{ flex: 1 }}>Submit Update</Button>
+            <Button variant="secondary" onClick={() => { setPmJob(null); setPmNote(""); setPmChecked("No"); }} style={{ flex: 1 }}>Cancel</Button>
+            <Button onClick={handlePmSubmit} style={{ flex: 1 }}>Submit</Button>
           </div>
         </Modal>
       )}

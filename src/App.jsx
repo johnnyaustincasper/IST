@@ -701,9 +701,12 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
                                 <div style={{ marginTop: "3px", color: t.text, paddingLeft: "2px" }}>{p.note}</div>
                               </div>
                             ))}
-                            <div style={{ marginTop: "10px", fontSize: "12.5px", display: "flex", alignItems: "center", gap: "10px" }}>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: "#dc2626" }}>AM:</span><span style={{ fontWeight: 600, color: job.jobCheckedAM === "Yes" ? "#15803d" : t.textMuted }}>{job.jobCheckedAM || "No"}</span></span>
-                              <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: "#dc2626" }}>PM:</span><span style={{ fontWeight: 600, color: job.jobCheckedPM === "Yes" ? "#15803d" : t.textMuted }}>{job.jobCheckedPM || "No"}</span></span>
+                            <div style={{ marginTop: "10px", fontSize: "12.5px" }}>
+                              <div style={{ fontWeight: 600, color: "#dc2626", marginBottom: "4px" }}>Job Checked</div>
+                              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: t.textSecondary }}>AM:</span><span style={{ fontWeight: 600, color: job.jobCheckedAM === "Yes" ? "#15803d" : t.textMuted }}>{job.jobCheckedAM || "No"}</span></span>
+                                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: t.textSecondary }}>PM:</span><span style={{ fontWeight: 600, color: job.jobCheckedPM === "Yes" ? "#15803d" : t.textMuted }}>{job.jobCheckedPM || "No"}</span></span>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -963,12 +966,13 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
         <Modal title="Project Manager Update" onClose={() => { setPmJob(null); setPmNote(""); setPmCheckedAM("No"); setPmCheckedPM("No"); }}>
           <div style={{ fontSize: "13.5px", color: t.textMuted, marginBottom: "18px" }}><strong style={{ color: t.text }}>{pmJob.builder || "No Customer"}</strong><br />{pmJob.address} — {pmJob.type}</div>
           <TextArea label="Your update" placeholder="Add notes, instructions, status info for this job..." value={pmNote} onChange={(e) => setPmNote(e.target.value)} style={{ minHeight: "100px" }} />
+          <label style={{ display: "block", fontSize: "12px", fontWeight: 500, color: t.textSecondary, marginBottom: "5px" }}>Job Checked</label>
           <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
             <div style={{ flex: 1 }}>
-              <Select label="AM Check" value={pmCheckedAM} onChange={(e) => setPmCheckedAM(e.target.value)} options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]} />
+              <Select label="AM" value={pmCheckedAM} onChange={(e) => setPmCheckedAM(e.target.value)} options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]} />
             </div>
             <div style={{ flex: 1 }}>
-              <Select label="PM Check" value={pmCheckedPM} onChange={(e) => setPmCheckedPM(e.target.value)} options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]} />
+              <Select label="PM" value={pmCheckedPM} onChange={(e) => setPmCheckedPM(e.target.value)} options={[{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }]} />
             </div>
           </div>
           <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
@@ -1001,9 +1005,12 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
 
             <div style={{ marginBottom: "16px" }}>
               <div style={{ fontSize: "12px", fontWeight: 600, color: "#dc2626", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px", paddingBottom: "6px", borderBottom: "1px solid " + t.borderLight }}>Project Manager Updates</div>
-              <div style={{ fontSize: "12.5px", display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: "#dc2626" }}>AM:</span><span style={{ fontWeight: 600, color: calViewJob.jobCheckedAM === "Yes" ? "#15803d" : t.textMuted }}>{calViewJob.jobCheckedAM || "No"}</span></span>
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: "#dc2626" }}>PM:</span><span style={{ fontWeight: 600, color: calViewJob.jobCheckedPM === "Yes" ? "#15803d" : t.textMuted }}>{calViewJob.jobCheckedPM || "No"}</span></span>
+              <div style={{ fontSize: "12.5px", marginBottom: "8px" }}>
+                <div style={{ fontWeight: 600, color: "#dc2626", marginBottom: "4px" }}>Job Checked</div>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: t.textSecondary }}>AM:</span><span style={{ fontWeight: 600, color: calViewJob.jobCheckedAM === "Yes" ? "#15803d" : t.textMuted }}>{calViewJob.jobCheckedAM || "No"}</span></span>
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span style={{ fontWeight: 600, color: t.textSecondary }}>PM:</span><span style={{ fontWeight: 600, color: calViewJob.jobCheckedPM === "Yes" ? "#15803d" : t.textMuted }}>{calViewJob.jobCheckedPM || "No"}</span></span>
+                </div>
               </div>
               {jobPm.length === 0 ? <div style={{ fontSize: "12.5px", color: t.textMuted }}>No PM notes.</div> : jobPm.map((p) => (
                 <div key={p.id} style={{ fontSize: "12.5px", padding: "6px 0", borderBottom: "1px solid " + t.borderLight, color: t.textSecondary }}>

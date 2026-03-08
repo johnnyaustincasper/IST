@@ -1081,6 +1081,8 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
 // ─── Main App ───
 export default function App() {
   const [loading, setLoading] = useState(true);
+  const [minLoadDone, setMinLoadDone] = useState(false);
+  useEffect(() => { setTimeout(() => setMinLoadDone(true), 2200); }, []);
   const [role, setRole] = useState(null);
   const [crewSession, setCrewSession] = useState(null);
   const [adminName, setAdminName] = useState(null);
@@ -1127,7 +1129,7 @@ export default function App() {
   };
   const handleAdminLogin = (name) => { setAdminName(name); setRole("admin"); addDoc(collection(db, "activityLog"), { user: name, action: "Signed in", timestamp: new Date().toISOString(), createdAt: serverTimestamp() }); };
 
-  if (loading) return (
+  if (loading || !minLoadDone) return (
     <div style={{ minHeight: "100vh", background: "#0f172a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
       <style>{`
         @keyframes tornadoSpin {

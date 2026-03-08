@@ -1180,15 +1180,78 @@ export default function App() {
           0% { transform: translateX(0); }
           100% { transform: translateX(-30px); }
         }
-        @keyframes lightning {
-          0%,85%,100% { opacity: 0; }
-          87%,91% { opacity: 0.9; }
-          89% { opacity: 0.2; }
+        @keyframes lightning1 {
+          0%,100% { opacity: 0; }
+          6% { opacity: 1; }
+          7% { opacity: 0.2; }
+          8% { opacity: 1; }
+          10% { opacity: 0; }
+        }
+        @keyframes lightning2 {
+          0%,100% { opacity: 0; }
+          35% { opacity: 0; }
+          36% { opacity: 1; }
+          37% { opacity: 0.1; }
+          38% { opacity: 0.9; }
+          40% { opacity: 0; }
+        }
+        @keyframes lightning3 {
+          0%,100% { opacity: 0; }
+          70% { opacity: 0; }
+          71% { opacity: 1; }
+          72% { opacity: 0.3; }
+          73% { opacity: 1; }
+          75% { opacity: 0; }
+        }
+        @keyframes skyFlash1 {
+          0%,100% { opacity: 0; }
+          6%,8% { opacity: 0.15; }
+          7% { opacity: 0.05; }
+          10% { opacity: 0; }
+        }
+        @keyframes skyFlash2 {
+          0%,100% { opacity: 0; }
+          36%,38% { opacity: 0.12; }
+          37% { opacity: 0.03; }
+          40% { opacity: 0; }
+        }
+        @keyframes skyFlash3 {
+          0%,100% { opacity: 0; }
+          71%,73% { opacity: 0.18; }
+          72% { opacity: 0.06; }
+          75% { opacity: 0; }
         }
       `}</style>
 
-      {/* Lightning flash overlay */}
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(180,200,255,1)', animation: 'skyFlash 3s ease-in-out infinite', pointerEvents: 'none' }} />
+      {/* Sky flash overlays — one per bolt */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(180,200,255,1)', animation: 'skyFlash1 5s linear infinite', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(160,190,255,1)', animation: 'skyFlash2 5s linear infinite', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(200,210,255,1)', animation: 'skyFlash3 5s linear infinite', pointerEvents: 'none' }} />
+
+      {/* Lightning bolt 1 — left side, big branching bolt */}
+      <div style={{ position: 'absolute', top: '5%', left: '15%', animation: 'lightning1 5s linear infinite', filter: 'drop-shadow(0 0 6px rgba(150,180,255,0.9))' }}>
+        <svg width="40" height="120" viewBox="0 0 40 120" fill="none">
+          <polyline points="22,0 10,35 18,35 6,70 16,70 0,120" stroke="rgba(220,235,255,0.95)" strokeWidth="2.5" strokeLinejoin="round"/>
+          <polyline points="6,70 20,90" stroke="rgba(200,220,255,0.6)" strokeWidth="1.5" strokeLinejoin="round"/>
+          <polyline points="16,70 28,95" stroke="rgba(200,220,255,0.5)" strokeWidth="1.2" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      {/* Lightning bolt 2 — right side, shorter sharp bolt */}
+      <div style={{ position: 'absolute', top: '3%', right: '18%', animation: 'lightning2 5s linear infinite', filter: 'drop-shadow(0 0 8px rgba(180,200,255,1))' }}>
+        <svg width="30" height="90" viewBox="0 0 30 90" fill="none">
+          <polyline points="18,0 8,28 16,28 4,60 14,60 2,90" stroke="rgba(230,240,255,0.98)" strokeWidth="3" strokeLinejoin="round"/>
+          <polyline points="4,60 18,78" stroke="rgba(210,225,255,0.55)" strokeWidth="1.5" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      {/* Lightning bolt 3 — center-right, thin distant bolt */}
+      <div style={{ position: 'absolute', top: '8%', left: '58%', animation: 'lightning3 5s linear infinite', filter: 'drop-shadow(0 0 4px rgba(160,190,255,0.8))' }}>
+        <svg width="20" height="70" viewBox="0 0 20 70" fill="none">
+          <polyline points="12,0 5,22 11,22 3,45 9,45 0,70" stroke="rgba(210,228,255,0.85)" strokeWidth="1.8" strokeLinejoin="round"/>
+          <polyline points="3,45 14,60" stroke="rgba(190,215,255,0.4)" strokeWidth="1" strokeLinejoin="round"/>
+        </svg>
+      </div>
 
       {/* Storm clouds */}
       {[
@@ -1207,12 +1270,7 @@ export default function App() {
         }} />
       ))}
 
-      {/* Lightning bolt */}
-      <div style={{ position: 'absolute', top: '8%', left: '65%', animation: 'lightning 3s ease-in-out infinite', animationDelay: '1.5s' }}>
-        <svg width="24" height="60" viewBox="0 0 24 60" fill="none">
-          <polyline points="14,0 4,28 12,28 8,60" stroke="rgba(200,220,255,0.95)" strokeWidth="2.5" strokeLinejoin="round"/>
-        </svg>
-      </div>
+
 
       {/* Tornado body */}
       <div style={{ position: 'relative', marginBottom: '40px', animation: 'tornado 2s ease-in-out infinite' }}>

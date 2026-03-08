@@ -1327,20 +1327,6 @@ export default function App() {
 
       {/* IST Branding */}
       <div style={{ textAlign: 'center', position: 'relative', zIndex: 10 }}>
-        {/* Insulation Services of Tulsa — wave animation */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px', animation: 'taglineIn 0.6s ease forwards', animationDelay: '0.6s', opacity: 0 }}>
-          {"INSULATION SERVICES OF TULSA".split("").map((char, i) => (
-            <span key={i} style={{
-              display: 'inline-block',
-              fontSize: '10px', fontWeight: 700, color: 'rgba(160,185,220,0.85)',
-              letterSpacing: '2px', textTransform: 'uppercase',
-              animation: char !== ' ' ? `waveLetter 1.6s ease-in-out infinite` : 'none',
-              animationDelay: `${i * 0.06}s`,
-              whiteSpace: 'pre',
-            }}>{char}</span>
-          ))}
-        </div>
-
         <div style={{
           fontSize: '36px', fontWeight: 900, color: '#f0f4ff',
           letterSpacing: '8px', textTransform: 'uppercase',

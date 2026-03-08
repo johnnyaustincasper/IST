@@ -1082,7 +1082,7 @@ function AdminDashboard({ adminName, trucks, jobs, updates, tickets, activityLog
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [minLoadDone, setMinLoadDone] = useState(false);
-  useEffect(() => { setTimeout(() => setMinLoadDone(true), 2200); }, []);
+  useEffect(() => { setTimeout(() => setMinLoadDone(true), 3500); }, []);
   const [role, setRole] = useState(null);
   const [crewSession, setCrewSession] = useState(null);
   const [adminName, setAdminName] = useState(null);
@@ -1130,93 +1130,159 @@ export default function App() {
   const handleAdminLogin = (name) => { setAdminName(name); setRole("admin"); addDoc(collection(db, "activityLog"), { user: name, action: "Signed in", timestamp: new Date().toISOString(), createdAt: serverTimestamp() }); };
 
   if (loading || !minLoadDone) return (
-    <div style={{ minHeight: "100vh", background: "#0f172a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #0a0f1e 0%, #1a2035 40%, #2d3a1e 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative" }}>
       <style>{`
-        @keyframes tornadoSpin {
-          0% { transform: rotate(0deg) scaleX(1); }
-          50% { transform: rotate(180deg) scaleX(0.4); }
-          100% { transform: rotate(360deg) scaleX(1); }
+        @keyframes skyFlash {
+          0%,90%,100% { opacity: 0; }
+          92%,96% { opacity: 0.12; }
         }
-        @keyframes tornadoWobble {
-          0%,100% { transform: translateX(0px); }
-          25% { transform: translateX(-8px); }
-          75% { transform: translateX(8px); }
+        @keyframes tornado {
+          0% { transform: translateX(0px) skewX(0deg); }
+          20% { transform: translateX(-6px) skewX(-3deg); }
+          40% { transform: translateX(4px) skewX(2deg); }
+          60% { transform: translateX(-3px) skewX(-1deg); }
+          80% { transform: translateX(5px) skewX(3deg); }
+          100% { transform: translateX(0px) skewX(0deg); }
         }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes ringRotate {
+          from { transform: rotateX(70deg) rotate(0deg); }
+          to { transform: rotateX(70deg) rotate(360deg); }
         }
-        @keyframes dustSwirl {
-          0% { transform: rotate(0deg) translateX(40px) rotate(0deg); opacity: 0.6; }
-          100% { transform: rotate(360deg) translateX(40px) rotate(-360deg); opacity: 0; }
+        @keyframes debris {
+          0% { transform: rotate(0deg) translateX(var(--r)) rotate(0deg) scale(1); opacity: 0.8; }
+          100% { transform: rotate(360deg) translateX(var(--r)) rotate(-360deg) scale(0.3); opacity: 0; }
         }
-        @keyframes cloudDrift {
-          0% { transform: translateX(-20px); opacity: 0; }
-          20% { opacity: 0.15; }
-          80% { opacity: 0.15; }
-          100% { transform: translateX(20px); opacity: 0; }
+        @keyframes groundRumble {
+          0%,100% { transform: scaleX(1) scaleY(1); opacity: 0.4; }
+          50% { transform: scaleX(1.08) scaleY(0.7); opacity: 0.7; }
         }
-        .tornado-ring {
-          border-radius: 50%;
-          border: 2px solid rgba(148,163,184,0.3);
-          position: absolute;
-          animation: tornadoSpin 1.2s ease-in-out infinite;
+        @keyframes istReveal {
+          0% { opacity: 0; letter-spacing: 20px; transform: translateY(10px); }
+          60% { opacity: 1; }
+          100% { opacity: 1; letter-spacing: 8px; transform: translateY(0); }
         }
-        .dust-particle {
-          width: 4px; height: 4px;
-          background: rgba(148,163,184,0.5);
-          border-radius: 50%;
-          position: absolute;
-          animation: dustSwirl 2s linear infinite;
+        @keyframes taglineIn {
+          0% { opacity: 0; transform: translateY(8px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes barLoad {
+          0% { width: 0%; }
+          20% { width: 25%; }
+          50% { width: 60%; }
+          80% { width: 85%; }
+          100% { width: 100%; }
+        }
+        @keyframes cloudMove {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-30px); }
+        }
+        @keyframes lightning {
+          0%,85%,100% { opacity: 0; }
+          87%,91% { opacity: 0.9; }
+          89% { opacity: 0.2; }
         }
       `}</style>
 
-      {/* Dark stormy sky clouds */}
-      {[...Array(3)].map((_, i) => (
+      {/* Lightning flash overlay */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(180,200,255,1)', animation: 'skyFlash 3s ease-in-out infinite', pointerEvents: 'none' }} />
+
+      {/* Storm clouds */}
+      {[
+        { top: '4%', left: '-5%', w: 220, h: 55, delay: '0s', dur: '8s' },
+        { top: '10%', left: '30%', w: 180, h: 45, delay: '1s', dur: '10s' },
+        { top: '2%', left: '60%', w: 260, h: 60, delay: '0.5s', dur: '7s' },
+      ].map((c, i) => (
         <div key={i} style={{
-          position: 'absolute', top: `${15 + i * 12}%`, left: `${10 + i * 25}%`,
-          width: `${120 + i * 60}px`, height: '30px',
-          background: 'rgba(148,163,184,0.08)', borderRadius: '50px',
-          animation: `cloudDrift ${4 + i}s ease-in-out infinite`,
-          animationDelay: `${i * 0.8}s`,
+          position: 'absolute', top: c.top, left: c.left,
+          width: `${c.w}px`, height: `${c.h}px`,
+          background: `radial-gradient(ellipse, rgba(40,50,70,0.9) 0%, rgba(20,28,45,0.7) 70%, transparent 100%)`,
+          borderRadius: '50%',
+          animation: `cloudMove ${c.dur} ease-in-out infinite alternate`,
+          animationDelay: c.delay,
+          filter: 'blur(8px)',
         }} />
       ))}
 
-      {/* Tornado funnel */}
-      <div style={{ position: 'relative', width: '80px', height: '120px', marginBottom: '32px', animation: 'tornadoWobble 1.5s ease-in-out infinite' }}>
-        {/* Funnel shape — wide top, narrow bottom */}
-        {[0,1,2,3,4,5,6].map((i) => {
-          const width = 80 - i * 10;
-          const top = i * 16;
-          const opacity = 0.9 - i * 0.1;
-          const delay = i * 0.08;
+      {/* Lightning bolt */}
+      <div style={{ position: 'absolute', top: '8%', left: '65%', animation: 'lightning 3s ease-in-out infinite', animationDelay: '1.5s' }}>
+        <svg width="24" height="60" viewBox="0 0 24 60" fill="none">
+          <polyline points="14,0 4,28 12,28 8,60" stroke="rgba(200,220,255,0.95)" strokeWidth="2.5" strokeLinejoin="round"/>
+        </svg>
+      </div>
+
+      {/* Tornado body */}
+      <div style={{ position: 'relative', marginBottom: '40px', animation: 'tornado 2s ease-in-out infinite' }}>
+        {/* Funnel rings — trapezoid shape wide→narrow */}
+        {[0,1,2,3,4,5,6,7,8].map((i) => {
+          const w = 100 - i * 10;
+          const h = 16;
+          const blur = i < 3 ? 1 : 0;
           return (
             <div key={i} style={{
-              position: 'absolute', top: `${top}px`,
-              left: `${(80 - width) / 2}px`,
-              width: `${width}px`, height: '14px',
+              width: `${w}px`,
+              height: `${h}px`,
+              margin: '0 auto',
+              marginBottom: '2px',
               borderRadius: '50%',
-              border: `2px solid rgba(148,163,184,${opacity})`,
-              background: `rgba(30,41,59,${0.3 + i * 0.1})`,
-              animation: `tornadoSpin ${0.6 + i * 0.05}s ease-in-out infinite`,
-              animationDelay: `${delay}s`,
+              background: `rgba(80,90,110,${0.55 - i * 0.04})`,
+              border: `1.5px solid rgba(150,165,185,${0.6 - i * 0.05})`,
+              boxShadow: `0 0 ${6 + i}px rgba(100,120,160,0.3)`,
+              filter: `blur(${blur}px)`,
+              animation: `ringRotate ${0.5 + i * 0.06}s linear infinite`,
+              animationDirection: i % 2 === 0 ? 'normal' : 'reverse',
             }} />
           );
         })}
-        {/* Dust cloud at base */}
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="dust-particle" style={{
-            bottom: '-10px', left: '36px',
-            animationDelay: `${i * 0.33}s`,
-            animationDuration: `${1.5 + i * 0.2}s`,
-          }} />
-        ))}
+        {/* Debris particles orbiting */}
+        <div style={{ position: 'absolute', top: '40%', left: '50%', width: 0, height: 0 }}>
+          {[...Array(10)].map((_, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              width: `${2 + (i % 3)}px`,
+              height: `${2 + (i % 2)}px`,
+              background: `rgba(${150 + i * 8},${140 + i * 5},${100 + i * 4},0.8)`,
+              borderRadius: i % 3 === 0 ? '0' : '50%',
+              '--r': `${30 + (i % 4) * 12}px`,
+              animation: `debris ${1.2 + i * 0.18}s linear infinite`,
+              animationDelay: `${i * 0.12}s`,
+            }} />
+          ))}
+        </div>
+        {/* Ground dust cloud */}
+        <div style={{
+          width: '140px', height: '28px',
+          background: 'radial-gradient(ellipse, rgba(100,90,70,0.6) 0%, transparent 70%)',
+          borderRadius: '50%',
+          margin: '4px auto 0',
+          animation: 'groundRumble 0.8s ease-in-out infinite',
+          filter: 'blur(4px)',
+        }} />
       </div>
 
-      {/* IST branding */}
-      <div style={{ animation: 'fadeUp 0.8s ease forwards', animationDelay: '0.3s', opacity: 0, textAlign: 'center' }}>
-        <div style={{ fontSize: '28px', fontWeight: 800, color: '#f1f5f9', letterSpacing: '6px', marginBottom: '6px' }}>IST</div>
-        <div style={{ fontSize: '11px', fontWeight: 500, color: 'rgba(148,163,184,0.7)', letterSpacing: '3px', textTransform: 'uppercase' }}>Dispatch</div>
+      {/* IST Branding */}
+      <div style={{ textAlign: 'center', position: 'relative', zIndex: 10 }}>
+        <div style={{
+          fontSize: '36px', fontWeight: 900, color: '#f0f4ff',
+          letterSpacing: '8px', textTransform: 'uppercase',
+          textShadow: '0 0 30px rgba(100,140,255,0.4), 0 2px 8px rgba(0,0,0,0.8)',
+          animation: 'istReveal 1s cubic-bezier(0.16,1,0.3,1) forwards',
+          animationDelay: '0.4s', opacity: 0,
+        }}>IST</div>
+        <div style={{
+          fontSize: '11px', fontWeight: 600, color: 'rgba(160,180,210,0.8)',
+          letterSpacing: '4px', textTransform: 'uppercase', marginTop: '6px',
+          animation: 'taglineIn 0.6s ease forwards',
+          animationDelay: '1s', opacity: 0,
+        }}>DISPATCH</div>
+        {/* Loading bar */}
+        <div style={{ width: '120px', height: '2px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', margin: '20px auto 0', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+            borderRadius: '2px',
+            animation: 'barLoad 3.5s cubic-bezier(0.4,0,0.2,1) forwards',
+          }} />
+        </div>
       </div>
     </div>
   );
